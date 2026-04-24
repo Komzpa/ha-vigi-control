@@ -1,0 +1,67 @@
+import sys
+from importlib.util import module_from_spec, spec_from_file_location
+from pathlib import Path
+
+MODULE_PATH = (
+    Path(__file__).resolve().parents[1] / "custom_components" / "vigi_control" / "vigi_api.py"
+)
+SPEC = spec_from_file_location("vigi_api", MODULE_PATH)
+vigi_api = module_from_spec(SPEC)
+assert SPEC and SPEC.loader
+sys.modules[SPEC.name] = vigi_api
+SPEC.loader.exec_module(vigi_api)
+
+VigiCameraClient = vigi_api.VigiCameraClient
+VigiDeviceState = vigi_api.VigiDeviceState
+
+
+def test_brightness_level_mapping_clamps_to_camera_scale():
+    assert VigiCameraClient.brightness_level(1) == 1
+    assert VigiCameraClient.brightness_level(51) == 1
+    assert VigiCameraClient.brightness_level(102) == 2
+    assert VigiCameraClient.brightness_level(153) == 3
+    assert VigiCameraClient.brightness_level(204) == 4
+    assert VigiCameraClient.brightness_level(255) == 5
+    assert VigiCameraClient.brightness_level(999) == 5
+
+
+def test_device_state_reads_known_white_light_fields():
+    state = VigiDeviceState(
+        switch={"night_vision_mode": "wtl_night_vision", "wtl_intensity_level": "5"},
+        common={
+            "wtl_type": "on",
+            "inf_type": "on",
+            "smartwtl": "manual",
+            "smartwtl_level": "5",
+        },
+        device_info={"model": "VIGI C440-W", "fw_ver": "3.0.2"},
+        video={},
+        motion={},
+        alarm={},
+        lens_mask={},
+    )
+
+    assert state.white_light_on is True
+    assert state.brightness == 255
+    assert state.white_light_level == 5
+    assert state.night_vision_mode == "wtl_night_vision"
+    assert state.white_light_type == "on"
+    assert state.infrared_type == "on"
+    assert state.smart_white_light == "manual"
+    assert state.model == "VIGI C440-W"
+    assert state.firmware_version == "3.0.2"
+
+
+def test_device_state_treats_infrared_mode_as_white_light_off():
+    state = VigiDeviceState(
+        switch={"night_vision_mode": "inf_night_vision", "wtl_intensity_level": "3"},
+        common={"wtl_type": "auto"},
+        device_info={},
+        video={},
+        motion={},
+        alarm={},
+        lens_mask={},
+    )
+
+    assert state.white_light_on is False
+    assert state.brightness == 153

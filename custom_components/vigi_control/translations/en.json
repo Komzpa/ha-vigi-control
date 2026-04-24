@@ -1,0 +1,200 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Add VIGI camera controls",
+        "menu_options": {
+          "frigate": "Import from Frigate config",
+          "manual": "Enter camera manually"
+        }
+      },
+      "manual": {
+        "title": "Add VIGI camera controls manually",
+        "description": "Use the same local camera credentials that Frigate uses.",
+        "data": {
+          "name": "Name",
+          "host": "Host",
+          "username": "Username",
+          "password": "Password"
+        }
+      },
+      "frigate": {
+        "title": "Import from Frigate config",
+        "description": "Read local Frigate YAML and extract camera hosts and credentials from RTSP URLs.",
+        "data": {
+          "path": "Frigate config path"
+        }
+      },
+      "frigate_camera": {
+        "title": "Choose Frigate camera",
+        "data": {
+          "camera": "Camera",
+          "username": "Username",
+          "password": "Password"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Cannot connect to the camera",
+      "cannot_read_frigate_config": "Cannot read the Frigate config file",
+      "no_frigate_cameras": "No camera RTSP URLs were found in this Frigate config"
+    },
+    "abort": {
+      "already_configured": "This camera is already configured"
+    }
+  },
+  "entity": {
+    "light": {
+      "white_light": {
+        "name": "White light"
+      }
+    },
+    "number": {
+      "white_light_level": {
+        "name": "White light level"
+      },
+      "image_brightness": {
+        "name": "Image brightness"
+      },
+      "image_contrast": {
+        "name": "Image contrast"
+      },
+      "image_saturation": {
+        "name": "Image saturation"
+      },
+      "image_chroma": {
+        "name": "Image chroma"
+      },
+      "image_sharpness": {
+        "name": "Image sharpness"
+      },
+      "wide_dynamic_gain": {
+        "name": "Wide dynamic gain"
+      },
+      "exposure_gain": {
+        "name": "Exposure gain"
+      },
+      "white_light_delay": {
+        "name": "White light delay"
+      },
+      "infrared_delay": {
+        "name": "Infrared delay"
+      },
+      "motion_digital_sensitivity": {
+        "name": "Motion digital sensitivity"
+      }
+    },
+    "select": {
+      "night_vision_mode": {
+        "name": "Night vision mode",
+        "state": {
+          "inf_night_vision": "Infrared",
+          "wtl_night_vision": "White light"
+        }
+      },
+      "flip_type": {
+        "name": "Flip"
+      },
+      "rotate_type": {
+        "name": "Rotate"
+      },
+      "flicker": {
+        "name": "Flicker"
+      },
+      "image_scene_mode": {
+        "name": "Image scene mode"
+      },
+      "white_balance": {
+        "name": "White balance"
+      },
+      "exposure_type": {
+        "name": "Exposure type"
+      },
+      "smart_ir": {
+        "name": "Smart IR"
+      }
+    },
+    "sensor": {
+      "white_light_type": {
+        "name": "White light type"
+      },
+      "infrared_type": {
+        "name": "Infrared type"
+      },
+      "smart_white_light": {
+        "name": "Smart white light"
+      },
+      "firmware_version": {
+        "name": "Firmware version"
+      },
+      "main_stream_resolution": {
+        "name": "Main stream resolution"
+      },
+      "main_stream_encoding": {
+        "name": "Main stream encoding"
+      },
+      "main_stream_bitrate": {
+        "name": "Main stream bitrate"
+      },
+      "motion_sensitivity": {
+        "name": "Motion sensitivity"
+      },
+      "message_alarm_mode": {
+        "name": "Message alarm mode"
+      }
+    },
+    "switch": {
+      "wide_dynamic": {
+        "name": "Wide dynamic"
+      },
+      "high_light_compensation": {
+        "name": "High light compensation"
+      },
+      "dehaze": {
+        "name": "Dehaze"
+      },
+      "electronic_image_stabilization": {
+        "name": "Electronic image stabilization"
+      },
+      "auto_exposure_antiflicker": {
+        "name": "Auto exposure antiflicker"
+      },
+      "backlight_compensation": {
+        "name": "Backlight compensation"
+      },
+      "lens_distortion_correction": {
+        "name": "Lens distortion correction"
+      },
+      "full_color_people_enhance": {
+        "name": "Full-color people enhance"
+      },
+      "full_color_vehicle_enhance": {
+        "name": "Full-color vehicle enhance"
+      },
+      "preview_full_color": {
+        "name": "Preview full color"
+      },
+      "motion_detection": {
+        "name": "Motion detection"
+      },
+      "motion_people_detection": {
+        "name": "Motion people detection"
+      },
+      "motion_vehicle_detection": {
+        "name": "Motion vehicle detection"
+      },
+      "message_alarm": {
+        "name": "Message alarm"
+      },
+      "message_alarm_light": {
+        "name": "Message alarm light"
+      },
+      "message_alarm_sound": {
+        "name": "Message alarm sound"
+      },
+      "privacy_mask": {
+        "name": "Privacy mask"
+      }
+    }
+  }
+}
