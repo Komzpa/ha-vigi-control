@@ -6,17 +6,19 @@ from homeassistant.const import CONF_HOST, CONF_NAME, CONF_PASSWORD, CONF_USERNA
 
 from .const import DEFAULT_NAME, DOMAIN
 from .frigate import find_existing_frigate_config, load_frigate_candidates
+from .onvif_discovery import discover_onvif_candidates
 from .vigi_api import VigiApiError, VigiCameraClient
 
 
 class VigiControlConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     VERSION = 1
     _frigate_candidates = None
+    _onvif_candidates = None
 
     async def async_step_user(self, user_input=None):
         return self.async_show_menu(
             step_id="user",
-            menu_options=["frigate", "manual"],
+            menu_options=["onvif", "frigate", "manual"],
         )
 
     async def async_step_manual(self, user_input=None):
@@ -106,6 +108,62 @@ class VigiControlConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             errors=errors,
         )
 
+    async def async_step_onvif(self, user_input=None):
+        errors: dict[str, str] = {}
+
+        if user_input is not None:
+            try:
+                candidates = await self.hass.async_add_executor_job(discover_onvif_candidates)
+            except Exception:
+                errors["base"] = "cannot_discover_onvif"
+            else:
+                candidates = [candidate for candidate in candidates if candidate.host]
+                if not candidates:
+                    errors["base"] = "no_onvif_cameras"
+                else:
+                    self._onvif_candidates = candidates
+                    return await self.async_step_onvif_camera()
+
+        return self.async_show_form(
+            step_id="onvif",
+            data_schema=vol.Schema({vol.Required("start", default=True): bool}),
+            errors=errors,
+        )
+
+    async def async_step_onvif_camera(self, user_input=None):
+        errors: dict[str, str] = {}
+        candidates = self._onvif_candidates or []
+
+        if user_input is not None:
+            candidate = candidates[int(user_input["camera"])]
+            data = {
+                CONF_NAME: candidate.name or candidate.hardware or DEFAULT_NAME,
+                CONF_HOST: candidate.host,
+                CONF_USERNAME: user_input.get(CONF_USERNAME) or "admin",
+                CONF_PASSWORD: user_input.get(CONF_PASSWORD),
+            }
+            result = await self._async_validate_and_create_entry(data)
+            if result.get("type") == "create_entry":
+                return result
+            if "base" in result:
+                errors = result
+
+        options = {
+            str(index): _format_onvif_candidate(candidate)
+            for index, candidate in enumerate(candidates)
+        }
+        return self.async_show_form(
+            step_id="onvif_camera",
+            data_schema=vol.Schema(
+                {
+                    vol.Required("camera"): vol.In(options),
+                    vol.Required(CONF_USERNAME, default="admin"): str,
+                    vol.Required(CONF_PASSWORD): str,
+                }
+            ),
+            errors=errors,
+        )
+
     async def _async_validate_and_create_entry(self, user_input):
         host = user_input[CONF_HOST].strip()
         client = VigiCameraClient(
@@ -127,3 +185,10 @@ class VigiControlConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             title=data.get(CONF_NAME) or host,
             data=data,
         )
+
+
+def _format_onvif_candidate(candidate) -> str:
+    label = f"{candidate.name} ({candidate.host})"
+    if candidate.hardware and candidate.hardware != candidate.name:
+        label += f" [{candidate.hardware}]"
+    return label

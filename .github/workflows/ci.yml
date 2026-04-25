@@ -15,7 +15,7 @@ jobs:
       - name: Install test dependencies
         run: |
           python -m pip install --upgrade pip
-          python -m pip install aiohttp cryptography PyYAML pytest ruff voluptuous
+          python -m pip install aiohttp cryptography PyYAML pytest ruff voluptuous WSDiscovery==2.1.2
       - name: Ruff
         run: python -m ruff check custom_components tests
       - name: Compile

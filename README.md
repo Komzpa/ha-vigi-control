@@ -25,6 +25,7 @@ The first tested device is TP-Link VIGI C440-W. The local VIGI HTTPS API is not 
 - Diagnostic sensors for current white-light/infrared/smart-white-light state and firmware metadata when available.
 - Optional setup path that reads local Frigate YAML and imports camera host/credentials from RTSP URLs.
 - Feature detection from the camera's first API payload: entities are created only for fields the camera actually reports.
+- ONVIF WS-Discovery setup path for finding LAN cameras without sending credentials during discovery.
 - Local API access only; no TP-Link cloud account is used.
 
 ## Entities
@@ -55,11 +56,12 @@ Recommended architecture:
 
 ## Discovery
 
-VIGI Control does not currently scan the LAN for cameras. Network autodiscovery needs a reliable VIGI/TP-Link discovery signal and should avoid probing arbitrary HTTPS devices with camera credentials.
+VIGI Control can search the LAN with ONVIF WS-Discovery. This is the same no-credential discovery family used by ONVIF tooling: cameras reply with their ONVIF service address and descriptive scopes, then VIGI Control asks for credentials only after you choose a camera.
 
 Current setup paths:
 
 - **Frigate import** discovers configured camera hosts from local Frigate RTSP URLs.
+- **ONVIF discovery** discovers LAN cameras that answer WS-Discovery as `NetworkVideoTransmitter` devices.
 - **Manual setup** validates one host by logging into the local VIGI API.
 - **Feature detection** happens after login: each camera gets only the entities backed by fields it reported.
 

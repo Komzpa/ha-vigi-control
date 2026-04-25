@@ -8,7 +8,8 @@
   "issue_tracker": "https://github.com/Komzpa/ha-vigi-control/issues",
   "requirements": [
     "cryptography>=42.0.0",
-    "PyYAML>=6.0.0"
+    "PyYAML>=6.0.0",
+    "WSDiscovery==2.1.2"
   ],
-  "version": "0.1.1"
+  "version": "0.2.0"
 }
