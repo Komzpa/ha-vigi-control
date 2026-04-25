@@ -4,6 +4,8 @@
 
 # VIGI Control for Home Assistant
 
+[![Open your Home Assistant instance and add this repository to HACS.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=Komzpa&repository=ha-vigi-control&category=integration)
+
 Local Home Assistant controls for TP-Link VIGI cameras.
 
 This integration is intentionally designed to sit next to Frigate instead of replacing it:
@@ -84,7 +86,7 @@ When linked, VIGI Control adds the matching Frigate device identifier alongside 
 
 ### HACS custom repository
 
-1. In HACS, add this repository as a custom integration repository.
+1. Click the HACS badge above, or in HACS add `https://github.com/Komzpa/ha-vigi-control` as a custom integration repository.
 2. Install **VIGI Control**.
 3. Restart Home Assistant.
 4. Add the integration from **Settings -> Devices & services**.

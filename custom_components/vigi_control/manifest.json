@@ -1,7 +1,9 @@
 {
   "domain": "vigi_control",
   "name": "VIGI Control",
-  "codeowners": [],
+  "codeowners": [
+    "@Komzpa"
+  ],
   "config_flow": true,
   "documentation": "https://github.com/Komzpa/ha-vigi-control",
   "iot_class": "local_polling",
@@ -11,5 +13,5 @@
     "PyYAML>=6.0.0",
     "WSDiscovery==2.1.2"
   ],
-  "version": "0.3.3"
+  "version": "0.3.4"
 }
