@@ -24,6 +24,7 @@ The first tested device is TP-Link VIGI C440-W. The local VIGI HTTPS API is not 
 - Switches for WDR, HLC, dehaze, EIS, anti-flicker, backlight compensation, lens distortion correction, full-color enhancements, camera motion detection, camera-side message alarm settings, and privacy/lens mask.
 - Diagnostic sensors for current white-light/infrared/smart-white-light state and firmware metadata when available.
 - Optional setup path that reads local Frigate YAML and imports camera host/credentials from RTSP URLs.
+- Feature detection from the camera's first API payload: entities are created only for fields the camera actually reports.
 - Local API access only; no TP-Link cloud account is used.
 
 ## Entities
@@ -51,6 +52,16 @@ Recommended architecture:
 1. Frigate manages RTSP streams, snapshots, recordings, and detections.
 2. VIGI Control manages camera-side settings and illumination.
 3. Automations combine both surfaces, for example turning the VIGI white light on when Frigate sees a person.
+
+## Discovery
+
+VIGI Control does not currently scan the LAN for cameras. Network autodiscovery needs a reliable VIGI/TP-Link discovery signal and should avoid probing arbitrary HTTPS devices with camera credentials.
+
+Current setup paths:
+
+- **Frigate import** discovers configured camera hosts from local Frigate RTSP URLs.
+- **Manual setup** validates one host by logging into the local VIGI API.
+- **Feature detection** happens after login: each camera gets only the entities backed by fields it reported.
 
 ## Installation
 

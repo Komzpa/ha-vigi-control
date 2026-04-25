@@ -24,6 +24,7 @@ NIGHT_VISION_MODES = [
 class VigiSelectDescription(SelectEntityDescription):
     options: list[str]
     value_fn: Callable[[VigiDeviceState], str | None]
+    supported_fn: Callable[[VigiDeviceState], bool]
     set_fn: Callable[[VigiControlCoordinator, str], Any]
 
 
@@ -33,6 +34,7 @@ SELECTS = [
         translation_key="flip_type",
         options=["off", "center", "flip", "mirror"],
         value_fn=lambda state: _str_or_none(state.switch.get("flip_type")),
+        supported_fn=lambda state: state.has_image_switch("flip_type"),
         set_fn=lambda coordinator, value: coordinator.client.async_set_image_switch_value(
             "flip_type", value
         ),
@@ -42,6 +44,7 @@ SELECTS = [
         translation_key="rotate_type",
         options=["off", "90", "180", "270"],
         value_fn=lambda state: _str_or_none(state.switch.get("rotate_type")),
+        supported_fn=lambda state: state.has_image_switch("rotate_type"),
         set_fn=lambda coordinator, value: coordinator.client.async_set_image_switch_value(
             "rotate_type", value
         ),
@@ -51,6 +54,7 @@ SELECTS = [
         translation_key="flicker",
         options=["50hz", "60hz"],
         value_fn=lambda state: _str_or_none(state.switch.get("flicker")),
+        supported_fn=lambda state: state.has_image_switch("flicker"),
         set_fn=lambda coordinator, value: coordinator.client.async_set_image_switch_value(
             "flicker", value
         ),
@@ -60,6 +64,7 @@ SELECTS = [
         translation_key="image_scene_mode",
         options=["normal", "auto", "shedday", "shednight", "autoday", "autonight"],
         value_fn=lambda state: _str_or_none(state.switch.get("image_scene_mode")),
+        supported_fn=lambda state: state.has_image_switch("image_scene_mode"),
         set_fn=lambda coordinator, value: coordinator.client.async_set_image_switch_value(
             "image_scene_mode", value
         ),
@@ -69,6 +74,7 @@ SELECTS = [
         translation_key="white_balance",
         options=["auto", "nature", "manual", "lock"],
         value_fn=lambda state: _str_or_none(state.common.get("wb_type")),
+        supported_fn=lambda state: state.has_image_common("wb_type"),
         set_fn=lambda coordinator, value: coordinator.client.async_set_image_common_value(
             "wb_type", value
         ),
@@ -78,6 +84,7 @@ SELECTS = [
         translation_key="exposure_type",
         options=["auto", "manual"],
         value_fn=lambda state: _str_or_none(state.common.get("exp_type")),
+        supported_fn=lambda state: state.has_image_common("exp_type"),
         set_fn=lambda coordinator, value: coordinator.client.async_set_image_common_value(
             "exp_type", value
         ),
@@ -87,6 +94,7 @@ SELECTS = [
         translation_key="smart_ir",
         options=["auto_ir", "manual"],
         value_fn=lambda state: _str_or_none(state.common.get("smartir")),
+        supported_fn=lambda state: state.has_image_common("smartir"),
         set_fn=lambda coordinator, value: coordinator.client.async_set_image_common_value(
             "smartir", value
         ),
@@ -100,12 +108,15 @@ async def async_setup_entry(
     async_add_entities: AddEntitiesCallback,
 ) -> None:
     coordinator: VigiControlCoordinator = hass.data[DOMAIN][entry.entry_id]
-    async_add_entities(
-        [
-            VigiNightVisionModeSelect(coordinator, entry),
-            *[VigiCameraSelect(coordinator, entry, description) for description in SELECTS],
-        ]
+    entities = []
+    if coordinator.data.has_image_switch("night_vision_mode"):
+        entities.append(VigiNightVisionModeSelect(coordinator, entry))
+    entities.extend(
+        VigiCameraSelect(coordinator, entry, description)
+        for description in SELECTS
+        if description.supported_fn(coordinator.data)
     )
+    async_add_entities(entities)
 
 
 class VigiNightVisionModeSelect(VigiEntity, SelectEntity):

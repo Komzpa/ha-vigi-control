@@ -22,6 +22,7 @@ class VigiNumberDescription(NumberEntityDescription):
     native_step: int = 1
     mode: NumberMode = NumberMode.SLIDER
     value_fn: Callable[[VigiDeviceState], Any]
+    supported_fn: Callable[[VigiDeviceState], bool]
     set_fn: Callable[[VigiControlCoordinator, int], Any]
 
 
@@ -30,6 +31,7 @@ def _common_number(key: str, translation_key: str) -> VigiNumberDescription:
         key=key,
         translation_key=translation_key,
         value_fn=lambda state: _int_or_none(state.common.get(key)),
+        supported_fn=lambda state: state.has_image_common(key),
         set_fn=lambda coordinator, value: coordinator.client.async_set_image_common_value(
             key, value
         ),
@@ -52,6 +54,7 @@ COMMON_NUMBERS = [
         value_fn=lambda state: _int_or_none(
             _nested(state.motion, "motion_det", "digital_sensitivity")
         ),
+        supported_fn=lambda state: state.has_motion("digital_sensitivity"),
         set_fn=lambda coordinator, value: coordinator.client.async_set_motion_value(
             "digital_sensitivity", value
         ),
@@ -65,12 +68,15 @@ async def async_setup_entry(
     async_add_entities: AddEntitiesCallback,
 ) -> None:
     coordinator: VigiControlCoordinator = hass.data[DOMAIN][entry.entry_id]
-    async_add_entities(
-        [
-            VigiWhiteLightLevelNumber(coordinator, entry),
-            *[VigiCameraNumber(coordinator, entry, description) for description in COMMON_NUMBERS],
-        ]
+    entities = []
+    if coordinator.data.supports_white_light_level:
+        entities.append(VigiWhiteLightLevelNumber(coordinator, entry))
+    entities.extend(
+        VigiCameraNumber(coordinator, entry, description)
+        for description in COMMON_NUMBERS
+        if description.supported_fn(coordinator.data)
     )
+    async_add_entities(entities)
 
 
 class VigiWhiteLightLevelNumber(VigiEntity, NumberEntity):

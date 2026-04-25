@@ -18,6 +18,7 @@ from .vigi_api import VigiDeviceState
 @dataclass(frozen=True, kw_only=True)
 class VigiSwitchDescription(SwitchEntityDescription):
     value_fn: Callable[[VigiDeviceState], bool | None]
+    supported_fn: Callable[[VigiDeviceState], bool]
     set_fn: Callable[[VigiControlCoordinator, bool], Any]
 
 
@@ -26,6 +27,7 @@ def _image_common_switch(key: str, translation_key: str) -> VigiSwitchDescriptio
         key=key,
         translation_key=translation_key,
         value_fn=lambda state: _on_off(state.common.get(key)),
+        supported_fn=lambda state: state.has_image_common(key),
         set_fn=lambda coordinator, enabled: coordinator.client.async_set_image_common_value(
             key, _enabled(enabled)
         ),
@@ -37,6 +39,7 @@ def _image_switch_switch(key: str, translation_key: str) -> VigiSwitchDescriptio
         key=key,
         translation_key=translation_key,
         value_fn=lambda state: _on_off(state.switch.get(key)),
+        supported_fn=lambda state: state.has_image_switch(key),
         set_fn=lambda coordinator, enabled: coordinator.client.async_set_image_switch_value(
             key, _enabled(enabled)
         ),
@@ -58,6 +61,7 @@ SWITCHES = [
         key="motion_enabled",
         translation_key="motion_detection",
         value_fn=lambda state: _on_off(_nested(state.motion, "motion_det", "enabled")),
+        supported_fn=lambda state: state.has_motion("enabled"),
         set_fn=lambda coordinator, enabled: coordinator.client.async_set_motion_value(
             "enabled", _enabled(enabled)
         ),
@@ -66,6 +70,7 @@ SWITCHES = [
         key="motion_people_enabled",
         translation_key="motion_people_detection",
         value_fn=lambda state: _on_off(_nested(state.motion, "motion_det", "people_enabled")),
+        supported_fn=lambda state: state.has_motion("people_enabled"),
         set_fn=lambda coordinator, enabled: coordinator.client.async_set_motion_value(
             "people_enabled", _enabled(enabled)
         ),
@@ -74,6 +79,7 @@ SWITCHES = [
         key="motion_vehicle_enabled",
         translation_key="motion_vehicle_detection",
         value_fn=lambda state: _on_off(_nested(state.motion, "motion_det", "vehicle_enabled")),
+        supported_fn=lambda state: state.has_motion("vehicle_enabled"),
         set_fn=lambda coordinator, enabled: coordinator.client.async_set_motion_value(
             "vehicle_enabled", _enabled(enabled)
         ),
@@ -82,6 +88,7 @@ SWITCHES = [
         key="message_alarm_enabled",
         translation_key="message_alarm",
         value_fn=lambda state: _on_off(_nested(state.alarm, "chn1_msg_alarm_info", "enabled")),
+        supported_fn=lambda state: state.has_alarm("enabled"),
         set_fn=lambda coordinator, enabled: coordinator.client.async_set_alarm_value(
             "enabled", _enabled(enabled)
         ),
@@ -92,6 +99,7 @@ SWITCHES = [
         value_fn=lambda state: _on_off(
             _nested(state.alarm, "chn1_msg_alarm_info", "light_alarm_enabled")
         ),
+        supported_fn=lambda state: state.has_alarm("light_alarm_enabled"),
         set_fn=lambda coordinator, enabled: coordinator.client.async_set_alarm_value(
             "light_alarm_enabled", _enabled(enabled)
         ),
@@ -102,6 +110,7 @@ SWITCHES = [
         value_fn=lambda state: _on_off(
             _nested(state.alarm, "chn1_msg_alarm_info", "sound_alarm_enabled")
         ),
+        supported_fn=lambda state: state.has_alarm("sound_alarm_enabled"),
         set_fn=lambda coordinator, enabled: coordinator.client.async_set_alarm_value(
             "sound_alarm_enabled", _enabled(enabled)
         ),
@@ -110,6 +119,7 @@ SWITCHES = [
         key="lens_mask",
         translation_key="privacy_mask",
         value_fn=lambda state: _on_off(_nested(state.lens_mask, "lens_mask_info", "enabled")),
+        supported_fn=lambda state: state.has_lens_mask("enabled"),
         set_fn=lambda coordinator, enabled: coordinator.client.async_set_lens_mask_enabled(enabled),
     ),
 ]
@@ -122,7 +132,11 @@ async def async_setup_entry(
 ) -> None:
     coordinator: VigiControlCoordinator = hass.data[DOMAIN][entry.entry_id]
     async_add_entities(
-        [VigiCameraSwitch(coordinator, entry, description) for description in SWITCHES]
+        [
+            VigiCameraSwitch(coordinator, entry, description)
+            for description in SWITCHES
+            if description.supported_fn(coordinator.data)
+        ]
     )
 
 

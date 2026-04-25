@@ -65,3 +65,22 @@ def test_device_state_treats_infrared_mode_as_white_light_off():
 
     assert state.white_light_on is False
     assert state.brightness == 153
+
+
+def test_device_state_reports_supported_fields_from_payload_shape():
+    state = VigiDeviceState(
+        switch={"night_vision_mode": "inf_night_vision"},
+        common={"wtl_type": "auto"},
+        device_info={},
+        video={"main": {"resolution": "2560*1440"}},
+        motion={"motion_det": {"enabled": "on"}},
+        alarm={"chn1_msg_alarm_info": {"enabled": "off"}},
+        lens_mask={},
+    )
+
+    assert state.supports_white_light is True
+    assert state.supports_white_light_level is False
+    assert state.has_video_main("resolution") is True
+    assert state.has_motion("enabled") is True
+    assert state.has_alarm("enabled") is True
+    assert state.has_lens_mask("enabled") is False

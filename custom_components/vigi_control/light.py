@@ -25,7 +25,8 @@ async def async_setup_entry(
     async_add_entities: AddEntitiesCallback,
 ) -> None:
     coordinator: VigiControlCoordinator = hass.data[DOMAIN][entry.entry_id]
-    async_add_entities([VigiWhiteLight(coordinator, entry)])
+    if coordinator.data.supports_white_light:
+        async_add_entities([VigiWhiteLight(coordinator, entry)])
 
 
 class VigiWhiteLight(VigiEntity, LightEntity):
@@ -159,4 +160,3 @@ class VigiWhiteLight(VigiEntity, LightEntity):
             brightness = self._pending_brightness
             self._optimistic_brightness = brightness
             self._pending_brightness = None
-

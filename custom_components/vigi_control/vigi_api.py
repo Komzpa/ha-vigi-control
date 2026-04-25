@@ -29,6 +29,34 @@ class VigiDeviceState:
     alarm: Mapping[str, Any]
     lens_mask: Mapping[str, Any]
 
+    def has_image_switch(self, key: str) -> bool:
+        return key in self.switch
+
+    def has_image_common(self, key: str) -> bool:
+        return key in self.common
+
+    def has_motion(self, key: str) -> bool:
+        return _nested(self.motion, "motion_det", key) is not None
+
+    def has_alarm(self, key: str) -> bool:
+        return _nested(self.alarm, "chn1_msg_alarm_info", key) is not None
+
+    def has_lens_mask(self, key: str) -> bool:
+        return _nested(self.lens_mask, "lens_mask_info", key) is not None
+
+    def has_video_main(self, key: str) -> bool:
+        return _nested(self.video, "main", key) is not None
+
+    @property
+    def supports_white_light(self) -> bool:
+        return self.has_image_switch("night_vision_mode") or self.has_image_common("wtl_type")
+
+    @property
+    def supports_white_light_level(self) -> bool:
+        return self.has_image_switch("wtl_intensity_level") or self.has_image_common(
+            "smartwtl_level"
+        )
+
     @property
     def white_light_on(self) -> bool:
         return (
@@ -85,6 +113,15 @@ class VigiDeviceState:
             if isinstance(value, str) and value:
                 return unquote(value)
         return None
+
+
+def _nested(data: Mapping[str, Any], *path: str) -> Any:
+    current: Any = data
+    for key in path:
+        if not isinstance(current, Mapping):
+            return None
+        current = current.get(key)
+    return current
 
 
 class VigiCameraClient:
