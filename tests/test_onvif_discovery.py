@@ -16,6 +16,7 @@ SPEC.loader.exec_module(onvif_discovery)
 
 _candidate_from_service = onvif_discovery._candidate_from_service
 _deduplicate_candidates = onvif_discovery._deduplicate_candidates
+_is_vigi_service = onvif_discovery._is_vigi_service
 
 
 class FakeScope:
@@ -27,6 +28,10 @@ class FakeScope:
 
 
 class FakeService:
+    def __init__(self, name: str = "VIGI-C440-W", hardware: str = "VIGI-C440-W") -> None:
+        self._name = name
+        self._hardware = hardware
+
     def getXAddrs(self) -> list[str]:
         return ["http://192.168.100.28:2020/onvif/device_service"]
 
@@ -35,8 +40,8 @@ class FakeService:
 
     def getScopes(self) -> list[FakeScope]:
         return [
-            FakeScope("onvif://www.onvif.org/name/VIGI-C440-W"),
-            FakeScope("onvif://www.onvif.org/hardware/VIGI-C440-W"),
+            FakeScope(f"onvif://www.onvif.org/name/{self._name}"),
+            FakeScope(f"onvif://www.onvif.org/hardware/{self._hardware}"),
             FakeScope("onvif://www.onvif.org/Profile/Streaming"),
         ]
 
@@ -49,6 +54,7 @@ def test_candidate_from_service_extracts_vigi_onvif_identity():
     assert candidate.port == 2020
     assert candidate.hardware == "VIGI-C440-W"
     assert candidate.xaddr == "http://192.168.100.28:2020/onvif/device_service"
+    assert "onvif://www.onvif.org/hardware/VIGI-C440-W" in candidate.scopes
 
 
 def test_deduplicate_candidates_keeps_one_entry_per_host():
@@ -56,3 +62,8 @@ def test_deduplicate_candidates_keeps_one_entry_per_host():
     duplicate = _candidate_from_service(FakeService())
 
     assert _deduplicate_candidates([first, duplicate]) == [first]
+
+
+def test_vigi_service_filter_accepts_vigi_scopes_only():
+    assert _is_vigi_service(FakeService()) is True
+    assert _is_vigi_service(FakeService(name="GenericCam", hardware="IPC-123")) is False

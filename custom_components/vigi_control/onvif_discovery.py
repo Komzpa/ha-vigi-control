@@ -12,6 +12,7 @@ class OnvifCameraCandidate:
     hardware: str | None
     device_id: str | None
     xaddr: str
+    scopes: tuple[str, ...]
 
 
 def discover_onvif_candidates(timeout: int = 8) -> list[OnvifCameraCandidate]:
@@ -33,7 +34,12 @@ def discover_onvif_candidates(timeout: int = 8) -> list[OnvifCameraCandidate]:
             scopes=[Scope("onvif://www.onvif.org/Profile/Streaming")],
             timeout=timeout,
         )
-        return _deduplicate_candidates(_candidate_from_service(service) for service in services)
+        return _deduplicate_candidates(
+            candidate
+            for service in services
+            if _is_vigi_service(service)
+            for candidate in [_candidate_from_service(service)]
+        )
     finally:
         discovery.stop()
 
@@ -44,9 +50,9 @@ def _candidate_from_service(service) -> OnvifCameraCandidate:
     name = service.getEPR()
     hardware = None
     device_id = None
+    scopes = tuple(scope.getValue() for scope in service.getScopes())
 
-    for scope in service.getScopes():
-        scope_value = scope.getValue()
+    for scope_value in scopes:
         scope_lower = scope_value.lower()
         if scope_lower.startswith("onvif://www.onvif.org/name/"):
             name = unquote(scope_value.rsplit("/", 1)[-1])
@@ -62,7 +68,14 @@ def _candidate_from_service(service) -> OnvifCameraCandidate:
         hardware=hardware,
         device_id=device_id,
         xaddr=xaddr,
+        scopes=scopes,
     )
+
+
+def _is_vigi_service(service) -> bool:
+    candidate = _candidate_from_service(service)
+    markers = [candidate.name, candidate.hardware or "", *candidate.scopes]
+    return any("vigi" in marker.lower() for marker in markers)
 
 
 def _deduplicate_candidates(candidates) -> list[OnvifCameraCandidate]:

@@ -10,15 +10,15 @@
         }
       },
       "onvif": {
-        "title": "Discover ONVIF cameras on LAN",
-        "description": "Search the local network with ONVIF WS-Discovery. No camera credentials are sent during discovery.",
+        "title": "Discover VIGI cameras on LAN",
+        "description": "Search the local network with ONVIF WS-Discovery and show only devices whose ONVIF identity looks like VIGI. No camera credentials are sent during discovery.",
         "data": {
           "start": "Start discovery"
         }
       },
       "onvif_camera": {
         "title": "Choose discovered camera",
-        "description": "Discovery found ONVIF cameras. Enter the local VIGI credentials for the selected camera.",
+        "description": "Discovery found VIGI-like ONVIF cameras. Enter the local VIGI credentials for the selected camera.",
         "data": {
           "camera": "Camera",
           "username": "Username",
@@ -56,7 +56,7 @@
       "cannot_discover_onvif": "Cannot run ONVIF discovery",
       "cannot_read_frigate_config": "Cannot read the Frigate config file",
       "no_frigate_cameras": "No camera RTSP URLs were found in this Frigate config",
-      "no_onvif_cameras": "No ONVIF cameras were discovered"
+      "no_onvif_cameras": "No VIGI-like ONVIF cameras were discovered"
     },
     "abort": {
       "already_configured": "This camera is already configured"

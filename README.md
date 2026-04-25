@@ -56,12 +56,12 @@ Recommended architecture:
 
 ## Discovery
 
-VIGI Control can search the LAN with ONVIF WS-Discovery. This is the same no-credential discovery family used by ONVIF tooling: cameras reply with their ONVIF service address and descriptive scopes, then VIGI Control asks for credentials only after you choose a camera.
+VIGI Control can search the LAN with ONVIF WS-Discovery. This is the same no-credential discovery family used by ONVIF tooling: cameras reply with their ONVIF service address and descriptive scopes, VIGI Control keeps only candidates whose ONVIF name/hardware/scopes look like VIGI, then asks for credentials only after you choose a camera.
 
 Current setup paths:
 
 - **Frigate import** discovers configured camera hosts from local Frigate RTSP URLs.
-- **ONVIF discovery** discovers LAN cameras that answer WS-Discovery as `NetworkVideoTransmitter` devices.
+- **ONVIF discovery** discovers LAN cameras that answer WS-Discovery as `NetworkVideoTransmitter` devices and advertise VIGI identity in their ONVIF metadata.
 - **Manual setup** validates one host by logging into the local VIGI API.
 - **Feature detection** happens after login: each camera gets only the entities backed by fields it reported.
 
