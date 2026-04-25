@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="custom_components/vigi_control/brand/logo.png" alt="VIGI Control" width="520">
+</p>
+
 # VIGI Control for Home Assistant
 
 Local Home Assistant controls for TP-Link VIGI cameras.
@@ -21,6 +25,20 @@ The first tested device is TP-Link VIGI C440-W. The local VIGI HTTPS API is not 
 - Diagnostic sensors for current white-light/infrared/smart-white-light state and firmware metadata when available.
 - Optional setup path that reads local Frigate YAML and imports camera host/credentials from RTSP URLs.
 - Local API access only; no TP-Link cloud account is used.
+
+## Entities
+
+For each configured camera, VIGI Control creates a Home Assistant device with entities in these groups:
+
+| Platform | Entities |
+| --- | --- |
+| `light` | White light / floodlight with brightness |
+| `number` | White-light level, image brightness, contrast, saturation, chroma, sharpness, WDR gain, exposure gain, IR delay, white-light delay, motion digital sensitivity |
+| `select` | Night-vision mode, flip, rotate, flicker, image scene mode, white balance, exposure type, Smart IR |
+| `switch` | WDR, HLC, dehaze, EIS, auto-exposure anti-flicker, backlight compensation, lens distortion correction, full-color enhancement flags, camera motion detection flags, message alarm flags, privacy/lens mask |
+| `sensor` | Firmware, current light/infrared state, stream resolution/encoding/bitrate, motion sensitivity, message alarm mode |
+
+The exact entity set may change by model and firmware. Unsupported API sections are ignored so a camera can still expose the controls it supports.
 
 ## Frigate Setup
 
@@ -53,6 +71,21 @@ Copy `custom_components/vigi_control` into Home Assistant's `custom_components` 
 - Camera auto-exposure may make the visual brightness change look subtler than the API state change.
 - The white-light off path is order-sensitive on tested firmware: the integration sets `wtl_type=auto` before switching `night_vision_mode` back to infrared.
 - This integration does not create a camera entity by default, to avoid duplicate Frigate/ONVIF camera feeds.
+- Camera-side motion/alarm controls affect the camera firmware itself. If Frigate is your detection source of truth, keep Frigate automations pointed at Frigate entities and use these switches only when you deliberately want to change camera-side behavior.
+
+## Tested Hardware
+
+| Model | Firmware | Notes |
+| --- | --- | --- |
+| VIGI C440-W | `3.0.2 Build 240611 Rel.77271n` | White light, image controls, motion/alarm controls, stream diagnostics |
+
+## Troubleshooting
+
+- **Frigate import cannot read the config**: enter the camera host and local credentials manually. HAOS add-on config directories are not always visible inside the Home Assistant Core container.
+- **Brightness seems subtle**: the camera's auto-exposure may compensate for white-light changes. Check the white-light level entity or direct camera state rather than judging only by frame luma.
+- **Light state looks delayed**: Home Assistant receives an optimistic state immediately, but the camera may take several seconds to report the settled white-light mode and level back through the coordinator.
+- **Duplicate camera lights**: remove older prototype integrations such as `vigi_camera_lights` after VIGI Control is working.
+- **Integration icon still says "not available"**: clear the browser cache or restart Home Assistant after installing; local custom brand assets are served by Home Assistant 2026.3 and newer.
 
 ## Development Status
 
@@ -60,7 +93,6 @@ Early local integration. Tested against VIGI C440-W firmware from a Home Assista
 
 Planned next mappings:
 
-- Image controls such as brightness, contrast, saturation, sharpness, mirror, flip, WDR where available.
 - Audio controls where the camera exposes stable fields.
 - Camera event toggles only when they add value beyond Frigate events.
-- Optional Frigate config import helper for host/credential discovery.
+- More model/firmware reports from other VIGI cameras.
