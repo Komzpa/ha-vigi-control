@@ -95,11 +95,11 @@
       "exposure_gain": {
         "name": "Exposure gain"
       },
-      "white_light_delay": {
-        "name": "White light delay"
+      "white_light_auto_switch_delay": {
+        "name": "White light auto-switch delay"
       },
-      "infrared_delay": {
-        "name": "Infrared delay"
+      "infrared_auto_switch_delay": {
+        "name": "Infrared auto-switch delay"
       },
       "motion_digital_sensitivity": {
         "name": "Motion digital sensitivity"

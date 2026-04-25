@@ -6,6 +6,7 @@ from typing import Any
 
 from homeassistant.components.number import NumberEntity, NumberEntityDescription, NumberMode
 from homeassistant.config_entries import ConfigEntry
+from homeassistant.const import EntityCategory, UnitOfTime
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
@@ -38,6 +39,20 @@ def _common_number(key: str, translation_key: str) -> VigiNumberDescription:
     )
 
 
+def _delay_number(key: str, translation_key: str) -> VigiNumberDescription:
+    return VigiNumberDescription(
+        key=key,
+        translation_key=translation_key,
+        native_unit_of_measurement=UnitOfTime.SECONDS,
+        entity_category=EntityCategory.CONFIG,
+        value_fn=lambda state: _int_or_none(state.common.get(key)),
+        supported_fn=lambda state: state.has_image_common(key),
+        set_fn=lambda coordinator, value: coordinator.client.async_set_image_common_value(
+            key, value
+        ),
+    )
+
+
 COMMON_NUMBERS = [
     _common_number("luma", "image_brightness"),
     _common_number("contrast", "image_contrast"),
@@ -46,8 +61,8 @@ COMMON_NUMBERS = [
     _common_number("sharpness", "image_sharpness"),
     _common_number("wd_gain", "wide_dynamic_gain"),
     _common_number("exp_gain", "exposure_gain"),
-    _common_number("wtl_delay", "white_light_delay"),
-    _common_number("inf_delay", "infrared_delay"),
+    _delay_number("wtl_delay", "white_light_auto_switch_delay"),
+    _delay_number("inf_delay", "infrared_auto_switch_delay"),
     VigiNumberDescription(
         key="motion_digital_sensitivity",
         translation_key="motion_digital_sensitivity",

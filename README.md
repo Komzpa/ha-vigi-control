@@ -20,7 +20,7 @@ The first tested device is TP-Link VIGI C440-W. The local VIGI HTTPS API is not 
 - Slider-safe brightness handling: the first value is sent immediately, rapid follow-up values are coalesced.
 - Night-vision mode selector for the known infrared/white-light modes.
 - White-light level number entity using the camera's real 1-5 step scale.
-- Image controls for brightness, contrast, saturation, chroma, sharpness, WDR gain, exposure gain, IR/white-light delays, flip, rotate, flicker, scene, white balance, exposure mode, and Smart IR where the camera exposes those fields.
+- Image controls for brightness, contrast, saturation, chroma, sharpness, WDR gain, exposure gain, night-vision auto-switch delays, flip, rotate, flicker, scene, white balance, exposure mode, and Smart IR where the camera exposes those fields.
 - Switches for WDR, HLC, dehaze, EIS, anti-flicker, backlight compensation, lens distortion correction, full-color enhancements, camera motion detection, camera-side message alarm settings, and privacy/lens mask.
 - Diagnostic sensors for current white-light/infrared/smart-white-light state and firmware metadata when available.
 - Optional setup path that reads local Frigate YAML and imports camera host/credentials from RTSP URLs.
@@ -35,7 +35,7 @@ For each configured camera, VIGI Control creates a Home Assistant device with en
 | Platform | Entities |
 | --- | --- |
 | `light` | White light / floodlight with brightness |
-| `number` | White-light level, image brightness, contrast, saturation, chroma, sharpness, WDR gain, exposure gain, IR delay, white-light delay, motion digital sensitivity |
+| `number` | White-light level, image brightness, contrast, saturation, chroma, sharpness, WDR gain, exposure gain, infrared/white-light auto-switch delays, motion digital sensitivity |
 | `select` | Night-vision mode, flip, rotate, flicker, image scene mode, white balance, exposure type, Smart IR |
 | `switch` | WDR, HLC, dehaze, EIS, auto-exposure anti-flicker, backlight compensation, lens distortion correction, full-color enhancement flags, camera motion detection flags, message alarm flags, privacy/lens mask |
 | `sensor` | Firmware, current light/infrared state, stream resolution/encoding/bitrate, motion sensitivity, message alarm mode |
