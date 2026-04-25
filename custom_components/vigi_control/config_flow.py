@@ -3,8 +3,9 @@ from __future__ import annotations
 import voluptuous as vol
 from homeassistant import config_entries
 from homeassistant.const import CONF_HOST, CONF_NAME, CONF_PASSWORD, CONF_USERNAME
+from homeassistant.helpers import device_registry as dr
 
-from .const import DEFAULT_NAME, DOMAIN
+from .const import CONF_FRIGATE_DEVICE_IDENTIFIER, DEFAULT_NAME, DOMAIN
 from .frigate import find_existing_frigate_config, load_frigate_candidates
 from .onvif_discovery import discover_onvif_candidates
 from .vigi_api import VigiApiError, VigiCameraClient
@@ -39,6 +40,10 @@ class VigiControlConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                     vol.Required(CONF_HOST): str,
                     vol.Required(CONF_USERNAME, default="admin"): str,
                     vol.Required(CONF_PASSWORD): str,
+                    vol.Optional(
+                        CONF_FRIGATE_DEVICE_IDENTIFIER,
+                        default="",
+                    ): vol.In(_frigate_camera_options(self.hass)),
                 }
             ),
             errors=errors,
@@ -78,6 +83,10 @@ class VigiControlConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 CONF_HOST: candidate.host,
                 CONF_USERNAME: user_input.get(CONF_USERNAME) or candidate.username or "admin",
                 CONF_PASSWORD: user_input.get(CONF_PASSWORD) or candidate.password,
+                CONF_FRIGATE_DEVICE_IDENTIFIER: _find_frigate_identifier_for_camera_key(
+                    self.hass,
+                    candidate.key,
+                ),
             }
             result = await self._async_validate_and_create_entry(data)
             if result.get("type") == "create_entry":
@@ -141,6 +150,9 @@ class VigiControlConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 CONF_HOST: candidate.host,
                 CONF_USERNAME: user_input.get(CONF_USERNAME) or "admin",
                 CONF_PASSWORD: user_input.get(CONF_PASSWORD),
+                CONF_FRIGATE_DEVICE_IDENTIFIER: user_input.get(
+                    CONF_FRIGATE_DEVICE_IDENTIFIER
+                ),
             }
             result = await self._async_validate_and_create_entry(data)
             if result.get("type") == "create_entry":
@@ -159,6 +171,10 @@ class VigiControlConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                     vol.Required("camera"): vol.In(options),
                     vol.Required(CONF_USERNAME, default="admin"): str,
                     vol.Required(CONF_PASSWORD): str,
+                    vol.Optional(
+                        CONF_FRIGATE_DEVICE_IDENTIFIER,
+                        default="",
+                    ): vol.In(_frigate_camera_options(self.hass)),
                 }
             ),
             errors=errors,
@@ -181,6 +197,8 @@ class VigiControlConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
         data = dict(user_input)
         data[CONF_HOST] = host
+        if not data.get(CONF_FRIGATE_DEVICE_IDENTIFIER):
+            data.pop(CONF_FRIGATE_DEVICE_IDENTIFIER, None)
         return self.async_create_entry(
             title=data.get(CONF_NAME) or host,
             data=data,
@@ -192,3 +210,21 @@ def _format_onvif_candidate(candidate) -> str:
     if candidate.hardware and candidate.hardware != candidate.name:
         label += f" [{candidate.hardware}]"
     return label
+
+
+def _frigate_camera_options(hass) -> dict[str, str]:
+    options = {"": "Do not link to Frigate"}
+    registry = dr.async_get(hass)
+    for device in registry.devices.values():
+        for domain, identifier in device.identifiers:
+            if domain == "frigate" and ":" in identifier:
+                options[identifier] = device.name or identifier.rsplit(":", 1)[-1]
+    return dict(sorted(options.items(), key=lambda item: item[1]))
+
+
+def _find_frigate_identifier_for_camera_key(hass, camera_key: str) -> str:
+    suffix = f":{camera_key.lower()}"
+    for identifier in _frigate_camera_options(hass):
+        if identifier.lower().endswith(suffix):
+            return identifier
+    return ""

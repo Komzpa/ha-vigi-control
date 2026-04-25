@@ -21,6 +21,7 @@ DEFAULT_FRIGATE_CONFIG_PATHS = [
 
 @dataclass(frozen=True)
 class FrigateCameraCandidate:
+    key: str
     name: str
     host: str
     username: str | None
@@ -76,13 +77,14 @@ def _iter_camera_urls(camera_config: Any) -> list[str]:
     return urls
 
 
-def _candidate_from_url(name: str, raw_url: str) -> FrigateCameraCandidate | None:
+def _candidate_from_url(key: str, raw_url: str) -> FrigateCameraCandidate | None:
     parsed = urlparse(raw_url)
     if not parsed.hostname:
         return None
 
     return FrigateCameraCandidate(
-        name=name.replace("_", " ").title(),
+        key=key,
+        name=key.replace("_", " ").title(),
         host=parsed.hostname,
         username=unquote(parsed.username) if parsed.username else None,
         password=unquote(parsed.password) if parsed.password else None,

@@ -65,6 +65,15 @@ Current setup paths:
 - **Manual setup** validates one host by logging into the local VIGI API.
 - **Feature detection** happens after login: each camera gets only the entities backed by fields it reported.
 
+## Frigate Device Linking
+
+Home Assistant merges entities into one device when integrations report a shared device identifier. VIGI Control can link a camera to an existing Frigate camera device:
+
+- Frigate import links automatically when the Frigate camera key matches a live Frigate device.
+- Manual and ONVIF setup let you choose an existing Frigate camera from **Link to Frigate camera**.
+
+When linked, VIGI Control adds the matching Frigate device identifier alongside its own VIGI identifier, so the Frigate camera entity and VIGI controls appear under the same Home Assistant device.
+
 ## Installation
 
 ### HACS custom repository

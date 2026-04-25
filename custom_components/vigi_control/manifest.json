@@ -11,5 +11,5 @@
     "PyYAML>=6.0.0",
     "WSDiscovery==2.1.2"
   ],
-  "version": "0.2.1"
+  "version": "0.3.0"
 }
