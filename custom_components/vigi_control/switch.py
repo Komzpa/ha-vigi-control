@@ -127,6 +127,7 @@ SWITCHES = [
     VigiSwitchDescription(
         key="lens_mask",
         translation_key="privacy_mask",
+        entity_category=EntityCategory.CONFIG,
         value_fn=lambda state: _on_off(_nested(state.lens_mask, "lens_mask_info", "enabled")),
         supported_fn=lambda state: state.has_lens_mask("enabled"),
         set_fn=lambda coordinator, enabled: coordinator.client.async_set_lens_mask_enabled(enabled),

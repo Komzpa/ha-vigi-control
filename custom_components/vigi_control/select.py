@@ -129,6 +129,7 @@ async def async_setup_entry(
 
 class VigiNightVisionModeSelect(VigiEntity, SelectEntity):
     _attr_translation_key = "night_vision_mode"
+    _attr_entity_category = EntityCategory.CONFIG
     _attr_options = NIGHT_VISION_MODES
 
     def __init__(self, coordinator: VigiControlCoordinator, entry: ConfigEntry) -> None:

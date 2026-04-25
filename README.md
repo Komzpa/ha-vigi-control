@@ -44,8 +44,8 @@ The exact entity set may change by model and firmware. Unsupported API sections 
 
 Home Assistant placement is intentionally split by how often the control is useful:
 
-- **Controls**: everyday actions such as the white-light entity, night-vision mode, and privacy/lens mask.
-- **Configuration**: camera tuning such as the raw white-light level, image adjustment numbers/selects, camera-side motion detection, message alarm settings, and auto-switch delays.
+- **Controls**: the everyday white-light entity with on/off and brightness.
+- **Configuration**: camera tuning such as night-vision mode, privacy/lens mask, the raw white-light level, image adjustment numbers/selects, camera-side motion detection, message alarm settings, and auto-switch delays.
 - **Diagnostic**: read-only firmware, stream, light-state, motion, and alarm sensors.
 
 ## Frigate Setup
