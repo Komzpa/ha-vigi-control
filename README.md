@@ -42,6 +42,12 @@ For each configured camera, VIGI Control creates a Home Assistant device with en
 
 The exact entity set may change by model and firmware. Unsupported API sections are ignored so a camera can still expose the controls it supports.
 
+Home Assistant placement is intentionally split by how often the control is useful:
+
+- **Controls**: everyday actions such as the white-light entity, night-vision mode, and privacy/lens mask.
+- **Configuration**: camera tuning such as the raw white-light level, image adjustment numbers/selects, camera-side motion detection, message alarm settings, and auto-switch delays.
+- **Diagnostic**: read-only firmware, stream, light-state, motion, and alarm sensors.
+
 ## Frigate Setup
 
 If your cameras are already in Frigate, keep them there. Add VIGI Control with the same camera host and local camera credentials from your Frigate config. During setup you can either enter those values manually or use **Import from Frigate config**.

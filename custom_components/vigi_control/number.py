@@ -31,6 +31,7 @@ def _common_number(key: str, translation_key: str) -> VigiNumberDescription:
     return VigiNumberDescription(
         key=key,
         translation_key=translation_key,
+        entity_category=EntityCategory.CONFIG,
         value_fn=lambda state: _int_or_none(state.common.get(key)),
         supported_fn=lambda state: state.has_image_common(key),
         set_fn=lambda coordinator, value: coordinator.client.async_set_image_common_value(
@@ -66,6 +67,7 @@ COMMON_NUMBERS = [
     VigiNumberDescription(
         key="motion_digital_sensitivity",
         translation_key="motion_digital_sensitivity",
+        entity_category=EntityCategory.CONFIG,
         value_fn=lambda state: _int_or_none(
             _nested(state.motion, "motion_det", "digital_sensitivity")
         ),
@@ -96,6 +98,7 @@ async def async_setup_entry(
 
 class VigiWhiteLightLevelNumber(VigiEntity, NumberEntity):
     _attr_translation_key = "white_light_level"
+    _attr_entity_category = EntityCategory.CONFIG
     _attr_native_min_value = 1
     _attr_native_max_value = 5
     _attr_native_step = 1

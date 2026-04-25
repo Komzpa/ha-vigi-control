@@ -6,6 +6,7 @@ from typing import Any
 
 from homeassistant.components.switch import SwitchEntity, SwitchEntityDescription
 from homeassistant.config_entries import ConfigEntry
+from homeassistant.const import EntityCategory
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
@@ -26,6 +27,7 @@ def _image_common_switch(key: str, translation_key: str) -> VigiSwitchDescriptio
     return VigiSwitchDescription(
         key=key,
         translation_key=translation_key,
+        entity_category=EntityCategory.CONFIG,
         value_fn=lambda state: _on_off(state.common.get(key)),
         supported_fn=lambda state: state.has_image_common(key),
         set_fn=lambda coordinator, enabled: coordinator.client.async_set_image_common_value(
@@ -38,6 +40,7 @@ def _image_switch_switch(key: str, translation_key: str) -> VigiSwitchDescriptio
     return VigiSwitchDescription(
         key=key,
         translation_key=translation_key,
+        entity_category=EntityCategory.CONFIG,
         value_fn=lambda state: _on_off(state.switch.get(key)),
         supported_fn=lambda state: state.has_image_switch(key),
         set_fn=lambda coordinator, enabled: coordinator.client.async_set_image_switch_value(
@@ -60,6 +63,7 @@ SWITCHES = [
     VigiSwitchDescription(
         key="motion_enabled",
         translation_key="motion_detection",
+        entity_category=EntityCategory.CONFIG,
         value_fn=lambda state: _on_off(_nested(state.motion, "motion_det", "enabled")),
         supported_fn=lambda state: state.has_motion("enabled"),
         set_fn=lambda coordinator, enabled: coordinator.client.async_set_motion_value(
@@ -69,6 +73,7 @@ SWITCHES = [
     VigiSwitchDescription(
         key="motion_people_enabled",
         translation_key="motion_people_detection",
+        entity_category=EntityCategory.CONFIG,
         value_fn=lambda state: _on_off(_nested(state.motion, "motion_det", "people_enabled")),
         supported_fn=lambda state: state.has_motion("people_enabled"),
         set_fn=lambda coordinator, enabled: coordinator.client.async_set_motion_value(
@@ -78,6 +83,7 @@ SWITCHES = [
     VigiSwitchDescription(
         key="motion_vehicle_enabled",
         translation_key="motion_vehicle_detection",
+        entity_category=EntityCategory.CONFIG,
         value_fn=lambda state: _on_off(_nested(state.motion, "motion_det", "vehicle_enabled")),
         supported_fn=lambda state: state.has_motion("vehicle_enabled"),
         set_fn=lambda coordinator, enabled: coordinator.client.async_set_motion_value(
@@ -87,6 +93,7 @@ SWITCHES = [
     VigiSwitchDescription(
         key="message_alarm_enabled",
         translation_key="message_alarm",
+        entity_category=EntityCategory.CONFIG,
         value_fn=lambda state: _on_off(_nested(state.alarm, "chn1_msg_alarm_info", "enabled")),
         supported_fn=lambda state: state.has_alarm("enabled"),
         set_fn=lambda coordinator, enabled: coordinator.client.async_set_alarm_value(
@@ -96,6 +103,7 @@ SWITCHES = [
     VigiSwitchDescription(
         key="message_alarm_light_enabled",
         translation_key="message_alarm_light",
+        entity_category=EntityCategory.CONFIG,
         value_fn=lambda state: _on_off(
             _nested(state.alarm, "chn1_msg_alarm_info", "light_alarm_enabled")
         ),
@@ -107,6 +115,7 @@ SWITCHES = [
     VigiSwitchDescription(
         key="message_alarm_sound_enabled",
         translation_key="message_alarm_sound",
+        entity_category=EntityCategory.CONFIG,
         value_fn=lambda state: _on_off(
             _nested(state.alarm, "chn1_msg_alarm_info", "sound_alarm_enabled")
         ),

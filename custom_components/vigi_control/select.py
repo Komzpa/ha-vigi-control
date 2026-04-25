@@ -6,6 +6,7 @@ from typing import Any
 
 from homeassistant.components.select import SelectEntity, SelectEntityDescription
 from homeassistant.config_entries import ConfigEntry
+from homeassistant.const import EntityCategory
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
@@ -32,6 +33,7 @@ SELECTS = [
     VigiSelectDescription(
         key="flip_type",
         translation_key="flip_type",
+        entity_category=EntityCategory.CONFIG,
         options=["off", "center", "flip", "mirror"],
         value_fn=lambda state: _str_or_none(state.switch.get("flip_type")),
         supported_fn=lambda state: state.has_image_switch("flip_type"),
@@ -42,6 +44,7 @@ SELECTS = [
     VigiSelectDescription(
         key="rotate_type",
         translation_key="rotate_type",
+        entity_category=EntityCategory.CONFIG,
         options=["off", "90", "180", "270"],
         value_fn=lambda state: _str_or_none(state.switch.get("rotate_type")),
         supported_fn=lambda state: state.has_image_switch("rotate_type"),
@@ -52,6 +55,7 @@ SELECTS = [
     VigiSelectDescription(
         key="flicker",
         translation_key="flicker",
+        entity_category=EntityCategory.CONFIG,
         options=["50hz", "60hz"],
         value_fn=lambda state: _str_or_none(state.switch.get("flicker")),
         supported_fn=lambda state: state.has_image_switch("flicker"),
@@ -62,6 +66,7 @@ SELECTS = [
     VigiSelectDescription(
         key="image_scene_mode",
         translation_key="image_scene_mode",
+        entity_category=EntityCategory.CONFIG,
         options=["normal", "auto", "shedday", "shednight", "autoday", "autonight"],
         value_fn=lambda state: _str_or_none(state.switch.get("image_scene_mode")),
         supported_fn=lambda state: state.has_image_switch("image_scene_mode"),
@@ -72,6 +77,7 @@ SELECTS = [
     VigiSelectDescription(
         key="white_balance",
         translation_key="white_balance",
+        entity_category=EntityCategory.CONFIG,
         options=["auto", "nature", "manual", "lock"],
         value_fn=lambda state: _str_or_none(state.common.get("wb_type")),
         supported_fn=lambda state: state.has_image_common("wb_type"),
@@ -82,6 +88,7 @@ SELECTS = [
     VigiSelectDescription(
         key="exposure_type",
         translation_key="exposure_type",
+        entity_category=EntityCategory.CONFIG,
         options=["auto", "manual"],
         value_fn=lambda state: _str_or_none(state.common.get("exp_type")),
         supported_fn=lambda state: state.has_image_common("exp_type"),
@@ -92,6 +99,7 @@ SELECTS = [
     VigiSelectDescription(
         key="smart_ir",
         translation_key="smart_ir",
+        entity_category=EntityCategory.CONFIG,
         options=["auto_ir", "manual"],
         value_fn=lambda state: _str_or_none(state.common.get("smartir")),
         supported_fn=lambda state: state.has_image_common("smartir"),
