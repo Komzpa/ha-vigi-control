@@ -74,12 +74,14 @@ VIGI Control can expose an optional `media_player` entity that plays Home Assist
 
 - **go2rtc API URL**: for example `http://192.168.100.30:19840`
 - **go2rtc stream**: for example `living_vigi`
+- **OpenClaw agent URL**: optional; for example `http://192.168.100.30:18792/respond`
+- **OpenClaw agent token**: optional bearer token for the OpenClaw agent URL
 
 If go2rtc is embedded in the Frigate Home Assistant add-on, prefer the add-on DNS name from Home Assistant Core, for example `http://ccab4aaf-frigate:1984`, instead of running a second go2rtc instance.
 
 The media player resolves Home Assistant media sources, including TTS-generated media, and asks go2rtc to play them to the camera backchannel as `PCMA/8000`. On tested VIGI C440-W firmware this is the codec the camera actually negotiates for talk-back audio, so speech quality is telephone-grade but usable for short announcements and wake fallback messages.
 
-When talk-back is configured, VIGI Control also exposes an Assist satellite entity. It supports announcements and start-conversation actions: after the start announcement, VIGI Control reads the camera microphone from the same go2rtc stream, converts it to 16 kHz mono PCM WAV with ffmpeg, and feeds Home Assistant's Assist pipeline. The recognized text is sent to the configured conversation agent; if that agent is missing, VIGI Control falls back to Home Assistant's built-in conversation agent instead of failing before STT. Continuous wake-word listening is a separate always-on microphone loop and is not enabled by default.
+When talk-back is configured, VIGI Control also exposes an Assist satellite entity. It supports announcements and start-conversation actions: after the start announcement, VIGI Control reads the camera microphone from the same go2rtc stream, converts it to 16 kHz mono PCM WAV with ffmpeg, and feeds Home Assistant's Assist pipeline. The recognized text is sent to the optional OpenClaw agent URL when configured; otherwise it is sent to the configured Home Assistant conversation agent. If that HA agent is missing, VIGI Control falls back to Home Assistant's built-in conversation agent instead of failing before STT. Continuous wake-word listening is a separate always-on microphone loop and is not enabled by default.
 
 ## Discovery
 

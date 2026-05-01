@@ -21,9 +21,16 @@ from homeassistant.components.assist_pipeline import (
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_HOST
 from homeassistant.core import HomeAssistant
+from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
-from .const import CONF_GO2RTC_API_URL, CONF_GO2RTC_STREAM, DOMAIN
+from .const import (
+    CONF_GO2RTC_API_URL,
+    CONF_GO2RTC_STREAM,
+    CONF_OPENCLAW_AGENT_TOKEN,
+    CONF_OPENCLAW_AGENT_URL,
+    DOMAIN,
+)
 from .coordinator import VigiControlCoordinator
 from .entity import VigiEntity
 from .go2rtc import Go2RtcTalkConfig, async_play_talkback_url, build_rtsp_stream_url
@@ -72,6 +79,8 @@ class VigiAssistSatellite(VigiEntity, AssistSatelliteEntity):
     ) -> None:
         super().__init__(coordinator, entry)
         self._config = config
+        self._openclaw_agent_url = str(entry.options.get(CONF_OPENCLAW_AGENT_URL) or "")
+        self._openclaw_agent_token = str(entry.options.get(CONF_OPENCLAW_AGENT_TOKEN) or "")
         self._attr_unique_id = f"{entry.data[CONF_HOST]}_assist_satellite"
         self._last_stt_text: str | None = None
 
@@ -191,6 +200,16 @@ class VigiAssistSatellite(VigiEntity, AssistSatelliteEntity):
         text: str,
         extra_system_prompt: str | None,
     ) -> str | None:
+        if self._openclaw_agent_url:
+            try:
+                return await self._process_openclaw_text(text)
+            except Exception as exc:
+                _LOGGER.warning(
+                    "VIGI Assist OpenClaw agent request failed for %s: %s",
+                    self.entity_id,
+                    exc,
+                )
+
         agent_id = self._resolve_conversation_agent_id()
         result = await conversation.async_converse(
             self.hass,
@@ -209,6 +228,34 @@ class VigiAssistSatellite(VigiEntity, AssistSatelliteEntity):
             return None
 
         return speech.get("speech")
+
+    async def _process_openclaw_text(self, text: str) -> str | None:
+        timeout = aiohttp.ClientTimeout(total=45)
+        headers = {}
+        if self._openclaw_agent_token:
+            headers["Authorization"] = f"Bearer {self._openclaw_agent_token}"
+
+        session = async_get_clientsession(self.hass)
+        async with session.post(
+            self._openclaw_agent_url,
+            json={"text": text, "entity_id": self.entity_id},
+            headers=headers,
+            timeout=timeout,
+        ) as response:
+            try:
+                payload = await response.json()
+            except aiohttp.ContentTypeError as exc:
+                body = await response.text()
+                raise RuntimeError(
+                    f"HTTP {response.status}: non-JSON response {body[:200]}"
+                ) from exc
+
+            if response.status >= 400 or not payload.get("ok"):
+                raise RuntimeError(
+                    f"HTTP {response.status}: {payload.get('error') or payload}"
+                )
+
+        return str(payload.get("text") or "").strip() or None
 
     def _resolve_conversation_agent_id(self) -> str:
         pipeline = async_get_pipeline(self.hass, self._resolve_pipeline())

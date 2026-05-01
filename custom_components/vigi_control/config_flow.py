@@ -9,6 +9,8 @@ from .const import (
     CONF_FRIGATE_DEVICE_IDENTIFIER,
     CONF_GO2RTC_API_URL,
     CONF_GO2RTC_STREAM,
+    CONF_OPENCLAW_AGENT_TOKEN,
+    CONF_OPENCLAW_AGENT_URL,
     DEFAULT_GO2RTC_API_URL,
     DEFAULT_NAME,
     DOMAIN,
@@ -250,6 +252,14 @@ class VigiControlOptionsFlow(config_entries.OptionsFlow):
             data = {
                 CONF_GO2RTC_API_URL: user_input.get(CONF_GO2RTC_API_URL, "").strip(),
                 CONF_GO2RTC_STREAM: user_input.get(CONF_GO2RTC_STREAM, "").strip(),
+                CONF_OPENCLAW_AGENT_URL: user_input.get(
+                    CONF_OPENCLAW_AGENT_URL,
+                    "",
+                ).strip(),
+                CONF_OPENCLAW_AGENT_TOKEN: user_input.get(
+                    CONF_OPENCLAW_AGENT_TOKEN,
+                    "",
+                ).strip(),
             }
             return self.async_create_entry(title="", data=data)
 
@@ -265,6 +275,14 @@ class VigiControlOptionsFlow(config_entries.OptionsFlow):
                     vol.Optional(
                         CONF_GO2RTC_STREAM,
                         default=options.get(CONF_GO2RTC_STREAM, ""),
+                    ): str,
+                    vol.Optional(
+                        CONF_OPENCLAW_AGENT_URL,
+                        default=options.get(CONF_OPENCLAW_AGENT_URL, ""),
+                    ): str,
+                    vol.Optional(
+                        CONF_OPENCLAW_AGENT_TOKEN,
+                        default=options.get(CONF_OPENCLAW_AGENT_TOKEN, ""),
                     ): str,
                 }
             ),

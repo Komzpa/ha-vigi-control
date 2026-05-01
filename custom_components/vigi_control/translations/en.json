@@ -64,6 +64,19 @@
       "already_configured": "This camera is already configured"
     }
   },
+  "options": {
+    "step": {
+      "init": {
+        "title": "VIGI camera options",
+        "data": {
+          "go2rtc_api_url": "go2rtc API URL",
+          "go2rtc_stream": "go2rtc stream",
+          "openclaw_agent_url": "OpenClaw agent URL",
+          "openclaw_agent_token": "OpenClaw agent token"
+        }
+      }
+    }
+  },
   "entity": {
     "button": {
       "manual_alarm_start": {
