@@ -8,6 +8,7 @@ from homeassistant.helpers import device_registry as dr
 from .const import (
     CONF_FRIGATE_DEVICE_IDENTIFIER,
     CONF_GO2RTC_API_URL,
+    CONF_GO2RTC_MIC_STREAM,
     CONF_GO2RTC_STREAM,
     CONF_OPENCLAW_AGENT_TOKEN,
     CONF_OPENCLAW_AGENT_URL,
@@ -252,6 +253,10 @@ class VigiControlOptionsFlow(config_entries.OptionsFlow):
             data = {
                 CONF_GO2RTC_API_URL: user_input.get(CONF_GO2RTC_API_URL, "").strip(),
                 CONF_GO2RTC_STREAM: user_input.get(CONF_GO2RTC_STREAM, "").strip(),
+                CONF_GO2RTC_MIC_STREAM: user_input.get(
+                    CONF_GO2RTC_MIC_STREAM,
+                    "",
+                ).strip(),
                 CONF_OPENCLAW_AGENT_URL: user_input.get(
                     CONF_OPENCLAW_AGENT_URL,
                     "",
@@ -275,6 +280,10 @@ class VigiControlOptionsFlow(config_entries.OptionsFlow):
                     vol.Optional(
                         CONF_GO2RTC_STREAM,
                         default=options.get(CONF_GO2RTC_STREAM, ""),
+                    ): str,
+                    vol.Optional(
+                        CONF_GO2RTC_MIC_STREAM,
+                        default=options.get(CONF_GO2RTC_MIC_STREAM, ""),
                     ): str,
                     vol.Optional(
                         CONF_OPENCLAW_AGENT_URL,

@@ -71,6 +71,7 @@
         "data": {
           "go2rtc_api_url": "go2rtc API URL",
           "go2rtc_stream": "go2rtc stream",
+          "go2rtc_mic_stream": "go2rtc microphone stream",
           "openclaw_agent_url": "OpenClaw agent URL",
           "openclaw_agent_token": "OpenClaw agent token"
         }

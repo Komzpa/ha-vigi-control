@@ -50,6 +50,16 @@ def test_build_rtsp_stream_url_uses_default_go2rtc_rtsp_port():
     assert go2rtc.build_rtsp_stream_url(config) == "rtsp://ccab4aaf-frigate:8554/living_vigi"
 
 
+def test_build_rtsp_stream_url_prefers_microphone_stream():
+    config = go2rtc.Go2RtcTalkConfig(
+        api_url="http://ccab4aaf-frigate:1984",
+        stream="living_vigi",
+        mic_stream="living_sub",
+    )
+
+    assert go2rtc.build_rtsp_stream_url(config) == "rtsp://ccab4aaf-frigate:8554/living_sub"
+
+
 def test_build_rtsp_stream_url_preserves_nonstandard_port():
     config = go2rtc.Go2RtcTalkConfig(
         api_url="http://go2rtc.local:11984",
