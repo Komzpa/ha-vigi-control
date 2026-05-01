@@ -23,3 +23,12 @@ def test_assist_satellite_does_not_send_ogg_opus_to_home_assistant_stt():
     assert "stt.AudioFormats.OGG" not in source
     assert "stt.AudioCodecs.OPUS" not in source
     assert "libopus" not in source
+
+
+def test_assist_satellite_uses_home_assistant_pipeline_not_direct_agent_bridge():
+    source = ASSIST_SATELLITE.read_text(encoding="utf-8")
+
+    assert "conversation.async_converse" in source
+    assert "_process_openclaw_audio" not in source
+    assert "_process_openclaw_text" not in source
+    assert "openclaw_agent_url" not in source

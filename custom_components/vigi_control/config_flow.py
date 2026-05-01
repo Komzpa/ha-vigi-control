@@ -10,8 +10,6 @@ from .const import (
     CONF_GO2RTC_API_URL,
     CONF_GO2RTC_MIC_STREAM,
     CONF_GO2RTC_STREAM,
-    CONF_OPENCLAW_AGENT_TOKEN,
-    CONF_OPENCLAW_AGENT_URL,
     CONF_OPENCLAW_LISTEN_SECONDS,
     DEFAULT_GO2RTC_API_URL,
     DEFAULT_NAME,
@@ -259,14 +257,6 @@ class VigiControlOptionsFlow(config_entries.OptionsFlow):
                     CONF_GO2RTC_MIC_STREAM,
                     "",
                 ).strip(),
-                CONF_OPENCLAW_AGENT_URL: user_input.get(
-                    CONF_OPENCLAW_AGENT_URL,
-                    "",
-                ).strip(),
-                CONF_OPENCLAW_AGENT_TOKEN: user_input.get(
-                    CONF_OPENCLAW_AGENT_TOKEN,
-                    "",
-                ).strip(),
                 CONF_OPENCLAW_LISTEN_SECONDS: int(
                     user_input.get(
                         CONF_OPENCLAW_LISTEN_SECONDS,
@@ -292,14 +282,6 @@ class VigiControlOptionsFlow(config_entries.OptionsFlow):
                     vol.Optional(
                         CONF_GO2RTC_MIC_STREAM,
                         default=options.get(CONF_GO2RTC_MIC_STREAM, ""),
-                    ): str,
-                    vol.Optional(
-                        CONF_OPENCLAW_AGENT_URL,
-                        default=options.get(CONF_OPENCLAW_AGENT_URL, ""),
-                    ): str,
-                    vol.Optional(
-                        CONF_OPENCLAW_AGENT_TOKEN,
-                        default=options.get(CONF_OPENCLAW_AGENT_TOKEN, ""),
                     ): str,
                     vol.Optional(
                         CONF_OPENCLAW_LISTEN_SECONDS,

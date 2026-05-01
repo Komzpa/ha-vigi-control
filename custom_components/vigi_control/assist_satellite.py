@@ -1,11 +1,8 @@
 from __future__ import annotations
 
 import asyncio
-import base64
 import logging
-import tempfile
 from collections.abc import AsyncIterator
-from pathlib import Path
 
 import aiohttp
 from homeassistant.components import conversation, stt
@@ -24,15 +21,12 @@ from homeassistant.components.assist_satellite.entity import AssistSatelliteStat
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_HOST
 from homeassistant.core import HomeAssistant
-from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .const import (
     CONF_GO2RTC_API_URL,
     CONF_GO2RTC_MIC_STREAM,
     CONF_GO2RTC_STREAM,
-    CONF_OPENCLAW_AGENT_TOKEN,
-    CONF_OPENCLAW_AGENT_URL,
     CONF_OPENCLAW_LISTEN_SECONDS,
     DEFAULT_OPENCLAW_LISTEN_SECONDS,
     DOMAIN,
@@ -98,8 +92,6 @@ class VigiAssistSatellite(VigiEntity, AssistSatelliteEntity):
     ) -> None:
         super().__init__(coordinator, entry)
         self._config = config
-        self._openclaw_agent_url = str(entry.options.get(CONF_OPENCLAW_AGENT_URL) or "")
-        self._openclaw_agent_token = str(entry.options.get(CONF_OPENCLAW_AGENT_TOKEN) or "")
         self._listen_seconds = _listen_seconds(entry)
         self._attr_unique_id = f"{entry.data[CONF_HOST]}_assist_satellite"
         self._last_stt_text: str | None = None
@@ -129,23 +121,6 @@ class VigiAssistSatellite(VigiEntity, AssistSatelliteEntity):
 
         extra_system_prompt = self._extra_system_prompt
         self._last_stt_text = None
-
-        if self._openclaw_agent_url:
-            self._set_state(AssistSatelliteState.LISTENING)
-            response_text = await self._process_openclaw_audio()
-            if not response_text:
-                self._set_state(AssistSatelliteState.IDLE)
-                return
-
-            self._set_state(AssistSatelliteState.RESPONDING)
-            announcement = await self._resolve_announcement_media_id(
-                response_text,
-                None,
-                preannounce_media_id=None,
-            )
-            await self._play_announcement(announcement)
-            self.tts_response_finished()
-            return
 
         self._set_state(AssistSatelliteState.LISTENING)
         self._last_stt_text = await self._speech_to_text()
@@ -274,72 +249,11 @@ class VigiAssistSatellite(VigiEntity, AssistSatelliteEntity):
                 process.terminate()
                 await process.communicate()
 
-    async def _camera_wav_bytes(self) -> bytes:
-        rtsp_url = build_rtsp_stream_url(self._config)
-        _LOGGER.debug("VIGI Assist starting ffmpeg mic WAV capture from %s", rtsp_url)
-        with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as temp_file:
-            temp_path = Path(temp_file.name)
-
-        process = await asyncio.create_subprocess_exec(
-            "ffmpeg",
-            "-hide_banner",
-            "-loglevel",
-            "error",
-            "-re",
-            "-rtsp_transport",
-            "tcp",
-            "-i",
-            rtsp_url,
-            "-t",
-            str(self._listen_seconds),
-            "-vn",
-            "-ac",
-            "1",
-            "-ar",
-            "16000",
-            "-af",
-            "volume=24dB,acompressor=threshold=-18dB:ratio=4:attack=5:release=80,alimiter=limit=0.95",
-            "-c:a",
-            "pcm_s16le",
-            "-f",
-            "wav",
-            "-y",
-            str(temp_path),
-            stderr=asyncio.subprocess.PIPE,
-        )
-        try:
-            _stdout, stderr = await process.communicate()
-            stderr_text = stderr.decode(errors="replace").strip() if stderr else ""
-            audio = temp_path.read_bytes()
-            _LOGGER.debug(
-                "VIGI Assist ffmpeg mic WAV capture ended for %s: returncode=%s bytes=%s stderr=%s",
-                self.entity_id,
-                process.returncode,
-                len(audio),
-                stderr_text[-500:],
-            )
-            return audio
-        finally:
-            if process.returncode is None:
-                process.terminate()
-                await process.communicate()
-            temp_path.unlink(missing_ok=True)
-
     async def _process_conversation_text(
         self,
         text: str,
         extra_system_prompt: str | None,
     ) -> str | None:
-        if self._openclaw_agent_url:
-            try:
-                return await self._process_openclaw_text(text)
-            except Exception as exc:
-                _LOGGER.warning(
-                    "VIGI Assist OpenClaw agent request failed for %s: %s",
-                    self.entity_id,
-                    exc,
-                )
-
         agent_id = self._resolve_conversation_agent_id()
         result = await conversation.async_converse(
             self.hass,
@@ -358,67 +272,6 @@ class VigiAssistSatellite(VigiEntity, AssistSatelliteEntity):
             return None
 
         return speech.get("speech")
-
-    async def _process_openclaw_text(self, text: str) -> str | None:
-        timeout = aiohttp.ClientTimeout(total=45)
-        headers = {}
-        if self._openclaw_agent_token:
-            headers["Authorization"] = f"Bearer {self._openclaw_agent_token}"
-
-        session = async_get_clientsession(self.hass)
-        async with session.post(
-            self._openclaw_agent_url,
-            json={"text": text, "entity_id": self.entity_id},
-            headers=headers,
-            timeout=timeout,
-        ) as response:
-            try:
-                payload = await response.json()
-            except aiohttp.ContentTypeError as exc:
-                body = await response.text()
-                raise RuntimeError(
-                    f"HTTP {response.status}: non-JSON response {body[:200]}"
-                ) from exc
-
-            if response.status >= 400 or not payload.get("ok"):
-                raise RuntimeError(
-                    f"HTTP {response.status}: {payload.get('error') or payload}"
-                )
-
-        return str(payload.get("text") or "").strip() or None
-
-    async def _process_openclaw_audio(self) -> str | None:
-        timeout = aiohttp.ClientTimeout(total=75)
-        headers = {}
-        if self._openclaw_agent_token:
-            headers["Authorization"] = f"Bearer {self._openclaw_agent_token}"
-
-        audio = await self._camera_wav_bytes()
-        session = async_get_clientsession(self.hass)
-        async with session.post(
-            self._openclaw_agent_url,
-            json={
-                "audio_b64": base64.b64encode(audio).decode("ascii"),
-                "audio_format": "wav",
-                "entity_id": self.entity_id,
-            },
-            headers=headers,
-            timeout=timeout,
-        ) as response:
-            try:
-                payload = await response.json()
-            except aiohttp.ContentTypeError as exc:
-                body = await response.text()
-                raise RuntimeError(
-                    f"HTTP {response.status}: non-JSON response {body[:200]}"
-                ) from exc
-
-            if response.status >= 400 or not payload.get("ok"):
-                raise RuntimeError(
-                    f"HTTP {response.status}: {payload.get('error') or payload}"
-                )
-
-        return str(payload.get("text") or "").strip() or None
 
     def _resolve_conversation_agent_id(self) -> str:
         pipeline = async_get_pipeline(self.hass, self._resolve_pipeline())
