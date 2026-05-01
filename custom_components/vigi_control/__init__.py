@@ -9,6 +9,7 @@ from .coordinator import VigiControlCoordinator
 from .vigi_api import VigiCameraClient
 
 PLATFORMS = [
+    Platform.ASSIST_SATELLITE,
     Platform.BUTTON,
     Platform.LIGHT,
     Platform.MEDIA_PLAYER,

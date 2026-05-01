@@ -26,7 +26,7 @@ The first tested device is TP-Link VIGI C440-W. The local VIGI HTTPS API is not 
 - Switches for WDR, HLC, dehaze, EIS, anti-flicker, backlight compensation, lens distortion correction, full-color enhancements, camera motion detection, camera-side message alarm settings, and privacy/lens mask.
 - Buttons to start and stop the camera's manual alarm immediately, where the firmware supports VIGI/Tapo `manual_msg_alarm`.
 - Speaker volume control, where the camera exposes `audio_config.speaker.volume`.
-- Optional talk-back speaker media player for Home Assistant TTS/announcements through a configured go2rtc `vigi://` stream.
+- Optional talk-back speaker media player and Assist satellite announcement entity for Home Assistant TTS/announcements through a configured go2rtc `vigi://` stream.
 - Diagnostic sensors for current white-light/infrared/smart-white-light state and firmware metadata when available.
 - Optional setup path that reads local Frigate YAML and imports camera host/credentials from RTSP URLs.
 - Feature detection from the camera's first API payload: entities are created only for fields the camera actually reports.
@@ -42,6 +42,7 @@ For each configured camera, VIGI Control creates a Home Assistant device with en
 | `light` | White light / floodlight with brightness |
 | `button` | Manual alarm start/stop |
 | `media_player` | Optional talk-back speaker for TTS/announcements via go2rtc |
+| `assist_satellite` | Optional Assist announcement surface backed by the same talk-back speaker |
 | `number` | White-light level, speaker volume, image brightness, contrast, saturation, chroma, sharpness, WDR gain, exposure gain, infrared/white-light auto-switch delays, motion digital sensitivity |
 | `select` | Night-vision mode, flip, rotate, flicker, image scene mode, white balance, exposure type, Smart IR |
 | `switch` | WDR, HLC, dehaze, EIS, auto-exposure anti-flicker, backlight compensation, lens distortion correction, full-color enhancement flags, camera motion detection flags, message alarm flags, privacy/lens mask |
@@ -74,7 +75,11 @@ VIGI Control can expose an optional `media_player` entity that plays Home Assist
 - **go2rtc API URL**: for example `http://192.168.100.30:19840`
 - **go2rtc stream**: for example `living_vigi`
 
-The entity resolves Home Assistant media sources, including TTS-generated media, and asks go2rtc to play them to the camera backchannel as `PCMA/8000`. On tested VIGI C440-W firmware this is the codec the camera actually negotiates for talk-back audio, so speech quality is telephone-grade but usable for short announcements and wake fallback messages.
+If go2rtc is embedded in the Frigate Home Assistant add-on, prefer the add-on DNS name from Home Assistant Core, for example `http://ccab4aaf-frigate:1984`, instead of running a second go2rtc instance.
+
+The media player resolves Home Assistant media sources, including TTS-generated media, and asks go2rtc to play them to the camera backchannel as `PCMA/8000`. On tested VIGI C440-W firmware this is the codec the camera actually negotiates for talk-back audio, so speech quality is telephone-grade but usable for short announcements and wake fallback messages.
+
+When talk-back is configured, VIGI Control also exposes an Assist satellite entity with announcement support. Wake-word and speech-to-text support require a microphone-stream worker that feeds the Home Assistant Assist pipeline and are not part of this first talk-back surface.
 
 ## Discovery
 
