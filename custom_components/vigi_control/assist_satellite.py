@@ -201,8 +201,8 @@ class VigiAssistSatellite(VigiEntity, AssistSatelliteEntity):
 
         metadata = stt.SpeechMetadata(
             language=pipeline.stt_language or pipeline.language,
-            format=stt.AudioFormats.OGG,
-            codec=stt.AudioCodecs.OPUS,
+            format=stt.AudioFormats.WAV,
+            codec=stt.AudioCodecs.PCM,
             bit_rate=stt.AudioBitRates.BITRATE_16,
             sample_rate=stt.AudioSampleRates.SAMPLERATE_16000,
             channel=stt.AudioChannels.CHANNEL_MONO,
@@ -217,7 +217,7 @@ class VigiAssistSatellite(VigiEntity, AssistSatelliteEntity):
 
         result = await provider.async_process_audio_stream(
             metadata,
-            self._camera_ogg_stream(),
+            self._camera_pcm_stream(),
         )
         if result.result != stt.SpeechResultState.SUCCESS:
             _LOGGER.warning("VIGI Assist speech-to-text failed: %s", result.result)
@@ -225,12 +225,9 @@ class VigiAssistSatellite(VigiEntity, AssistSatelliteEntity):
 
         return result.text
 
-    async def _camera_ogg_stream(self) -> AsyncIterator[bytes]:
+    async def _camera_pcm_stream(self) -> AsyncIterator[bytes]:
         rtsp_url = build_rtsp_stream_url(self._config)
         _LOGGER.debug("VIGI Assist starting ffmpeg mic capture from %s", rtsp_url)
-        with tempfile.NamedTemporaryFile(suffix=".ogg", delete=False) as temp_file:
-            temp_path = Path(temp_file.name)
-
         process = await asyncio.create_subprocess_exec(
             "ffmpeg",
             "-hide_banner",
@@ -250,24 +247,21 @@ class VigiAssistSatellite(VigiEntity, AssistSatelliteEntity):
             "16000",
             "-af",
             "volume=24dB,acompressor=threshold=-18dB:ratio=4:attack=5:release=80,alimiter=limit=0.95",
-            "-c:a",
-            "libopus",
-            "-b:a",
-            "24k",
-            "-vbr",
-            "off",
-            "-application",
-            "voip",
             "-f",
-            "ogg",
-            "-y",
-            str(temp_path),
+            "s16le",
+            "pipe:1",
+            stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.PIPE,
         )
         try:
-            _stdout, stderr = await process.communicate()
+            assert process.stdout is not None
+            total_bytes = 0
+            while chunk := await process.stdout.read(4096):
+                total_bytes += len(chunk)
+                yield chunk
+            stderr = await process.stderr.read() if process.stderr else b""
+            await process.wait()
             stderr_text = stderr.decode(errors="replace").strip() if stderr else ""
-            total_bytes = temp_path.stat().st_size
             _LOGGER.debug(
                 "VIGI Assist ffmpeg mic capture ended for %s: returncode=%s bytes=%s stderr=%s",
                 self.entity_id,
@@ -275,14 +269,10 @@ class VigiAssistSatellite(VigiEntity, AssistSatelliteEntity):
                 total_bytes,
                 stderr_text[-500:],
             )
-            with temp_path.open("rb") as audio_file:
-                while chunk := audio_file.read(4096):
-                    yield chunk
         finally:
             if process.returncode is None:
                 process.terminate()
                 await process.communicate()
-            temp_path.unlink(missing_ok=True)
 
     async def _camera_wav_bytes(self) -> bytes:
         rtsp_url = build_rtsp_stream_url(self._config)
