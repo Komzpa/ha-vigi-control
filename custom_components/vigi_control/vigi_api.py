@@ -126,6 +126,14 @@ class VigiDeviceState:
         except (TypeError, ValueError):
             return None
 
+    @property
+    def speaker_system_volume(self) -> int | None:
+        value = _nested(self.audio, "speaker", "system_volume")
+        try:
+            return int(value)
+        except (TypeError, ValueError):
+            return None
+
 
 def _nested(data: Mapping[str, Any], *path: str) -> Any:
     current: Any = data
@@ -381,6 +389,20 @@ class VigiCameraClient:
                     "audio_config": {
                         "speaker": {
                             "volume": str(volume),
+                        },
+                    },
+                }
+            )
+
+    async def async_set_speaker_system_volume(self, volume: int) -> None:
+        volume = max(0, min(100, round(volume)))
+        async with self._lock:
+            await self._request(
+                {
+                    "method": "set",
+                    "audio_config": {
+                        "speaker": {
+                            "system_volume": str(volume),
                         },
                     },
                 }

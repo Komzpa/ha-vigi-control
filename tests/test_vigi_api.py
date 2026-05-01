@@ -41,7 +41,7 @@ def test_device_state_reads_known_white_light_fields():
         motion={},
         alarm={},
         lens_mask={},
-        audio={"speaker": {"volume": "80"}},
+        audio={"speaker": {"system_volume": "100", "volume": "80"}},
     )
 
     assert state.white_light_on is True
@@ -54,6 +54,7 @@ def test_device_state_reads_known_white_light_fields():
     assert state.model == "VIGI C440-W"
     assert state.firmware_version == "3.0.2"
     assert state.speaker_volume == 80
+    assert state.speaker_system_volume == 100
 
 
 def test_device_state_treats_infrared_mode_as_white_light_off():
@@ -81,7 +82,7 @@ def test_device_state_reports_supported_fields_from_payload_shape():
         motion={"motion_det": {"enabled": "on"}},
         alarm={"chn1_msg_alarm_info": {"enabled": "off"}},
         lens_mask={},
-        audio={"speaker": {"volume": "100"}},
+        audio={"speaker": {"system_volume": "100", "volume": "100"}},
     )
 
     assert state.supports_white_light is True
@@ -91,6 +92,7 @@ def test_device_state_reports_supported_fields_from_payload_shape():
     assert state.has_alarm("enabled") is True
     assert state.has_lens_mask("enabled") is False
     assert state.has_speaker("volume") is True
+    assert state.has_speaker("system_volume") is True
 
 
 async def _capture_request(client: VigiCameraClient, calls: list[dict]) -> None:
@@ -148,5 +150,20 @@ def test_set_speaker_volume_clamps_and_uses_audio_config():
         {
             "method": "set",
             "audio_config": {"speaker": {"volume": "100"}},
+        }
+    ]
+
+
+def test_set_speaker_system_volume_clamps_and_uses_audio_config():
+    client = VigiCameraClient("camera.local", "user", "pass")
+    calls: list[dict] = []
+    asyncio.run(_capture_request(client, calls))
+
+    asyncio.run(client.async_set_speaker_system_volume(-1))
+
+    assert calls == [
+        {
+            "method": "set",
+            "audio_config": {"speaker": {"system_volume": "0"}},
         }
     ]

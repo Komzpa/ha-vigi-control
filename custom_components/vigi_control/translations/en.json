@@ -114,6 +114,9 @@
       },
       "speaker_volume": {
         "name": "Speaker volume"
+      },
+      "speaker_system_volume": {
+        "name": "Speaker system volume"
       }
     },
     "select": {
