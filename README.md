@@ -77,12 +77,13 @@ VIGI Control can expose an optional `media_player` entity that plays Home Assist
 - **go2rtc microphone stream**: optional separate receive stream for the camera microphone, for example Frigate's `living_sub`; if empty, VIGI Control reuses the talk-back stream.
 - **OpenClaw agent URL**: optional; for example `http://192.168.100.30:18792/respond`
 - **OpenClaw agent token**: optional bearer token for the OpenClaw agent URL
+- **OpenClaw listen seconds**: microphone capture window for OpenClaw audio requests, default `5` seconds. Increase it for longer commands; keep it short for alarm/wake phrases.
 
 If go2rtc is embedded in the Frigate Home Assistant add-on, prefer the add-on DNS name from Home Assistant Core, for example `http://ccab4aaf-frigate:1984`, instead of running a second go2rtc instance.
 
 The media player resolves Home Assistant media sources, including TTS-generated media, and asks go2rtc to play them to the camera backchannel as `PCMA/8000`. On tested VIGI C440-W firmware this is the codec the camera actually negotiates for talk-back audio, so speech quality is telephone-grade but usable for short announcements and wake fallback messages.
 
-When talk-back is configured, VIGI Control also exposes an Assist satellite entity. It supports announcements and start-conversation actions: after the start announcement, VIGI Control reads the camera microphone from the configured go2rtc microphone stream, normalizes the low camera-mic level, converts it to a fixed 16 kHz mono Ogg Opus window with ffmpeg, and sends it to Home Assistant's configured STT provider. The recognized text is sent to the optional OpenClaw agent URL when configured; otherwise it is sent to the configured Home Assistant conversation agent. If that HA agent is missing, VIGI Control falls back to Home Assistant's built-in conversation agent instead of failing before STT. Continuous wake-word listening is a separate always-on microphone loop and is not enabled by default.
+When talk-back is configured, VIGI Control also exposes an Assist satellite entity. It supports announcements and start-conversation actions: after the start announcement, VIGI Control reads the camera microphone from the configured go2rtc microphone stream for the configured listen window, normalizes the low camera-mic level, converts it to 16 kHz mono audio with ffmpeg, and sends it onward. When an OpenClaw agent URL is configured, it sends the captured WAV audio directly to that bridge; otherwise it sends an Ogg Opus stream to Home Assistant's configured STT provider and forwards the recognized text to the configured Home Assistant conversation agent. If that HA agent is missing, VIGI Control falls back to Home Assistant's built-in conversation agent instead of failing before STT. Continuous wake-word listening is a separate always-on microphone loop and is not enabled by default.
 
 ## Discovery
 

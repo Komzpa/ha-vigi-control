@@ -12,8 +12,10 @@ from .const import (
     CONF_GO2RTC_STREAM,
     CONF_OPENCLAW_AGENT_TOKEN,
     CONF_OPENCLAW_AGENT_URL,
+    CONF_OPENCLAW_LISTEN_SECONDS,
     DEFAULT_GO2RTC_API_URL,
     DEFAULT_NAME,
+    DEFAULT_OPENCLAW_LISTEN_SECONDS,
     DOMAIN,
 )
 from .frigate import find_existing_frigate_config, load_frigate_candidates
@@ -265,6 +267,12 @@ class VigiControlOptionsFlow(config_entries.OptionsFlow):
                     CONF_OPENCLAW_AGENT_TOKEN,
                     "",
                 ).strip(),
+                CONF_OPENCLAW_LISTEN_SECONDS: int(
+                    user_input.get(
+                        CONF_OPENCLAW_LISTEN_SECONDS,
+                        DEFAULT_OPENCLAW_LISTEN_SECONDS,
+                    )
+                ),
             }
             return self.async_create_entry(title="", data=data)
 
@@ -293,6 +301,13 @@ class VigiControlOptionsFlow(config_entries.OptionsFlow):
                         CONF_OPENCLAW_AGENT_TOKEN,
                         default=options.get(CONF_OPENCLAW_AGENT_TOKEN, ""),
                     ): str,
+                    vol.Optional(
+                        CONF_OPENCLAW_LISTEN_SECONDS,
+                        default=options.get(
+                            CONF_OPENCLAW_LISTEN_SECONDS,
+                            DEFAULT_OPENCLAW_LISTEN_SECONDS,
+                        ),
+                    ): vol.All(vol.Coerce(int), vol.Range(min=3, max=12)),
                 }
             ),
         )

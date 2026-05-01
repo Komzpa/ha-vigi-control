@@ -33,13 +33,13 @@ from .const import (
     CONF_GO2RTC_STREAM,
     CONF_OPENCLAW_AGENT_TOKEN,
     CONF_OPENCLAW_AGENT_URL,
+    CONF_OPENCLAW_LISTEN_SECONDS,
+    DEFAULT_OPENCLAW_LISTEN_SECONDS,
     DOMAIN,
 )
 from .coordinator import VigiControlCoordinator
 from .entity import VigiEntity
 from .go2rtc import Go2RtcTalkConfig, async_play_talkback_url, build_rtsp_stream_url
-
-CONVERSATION_LISTEN_SECONDS = 8
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -66,6 +66,20 @@ def _talk_config(entry: ConfigEntry) -> Go2RtcTalkConfig:
     )
 
 
+def _listen_seconds(entry: ConfigEntry) -> int:
+    try:
+        value = int(
+            entry.options.get(
+                CONF_OPENCLAW_LISTEN_SECONDS,
+                DEFAULT_OPENCLAW_LISTEN_SECONDS,
+            )
+        )
+    except (TypeError, ValueError):
+        return DEFAULT_OPENCLAW_LISTEN_SECONDS
+
+    return min(12, max(3, value))
+
+
 class VigiAssistSatellite(VigiEntity, AssistSatelliteEntity):
     """Assist satellite surface for VIGI camera talk-back and mic streaming."""
 
@@ -86,6 +100,7 @@ class VigiAssistSatellite(VigiEntity, AssistSatelliteEntity):
         self._config = config
         self._openclaw_agent_url = str(entry.options.get(CONF_OPENCLAW_AGENT_URL) or "")
         self._openclaw_agent_token = str(entry.options.get(CONF_OPENCLAW_AGENT_TOKEN) or "")
+        self._listen_seconds = _listen_seconds(entry)
         self._attr_unique_id = f"{entry.data[CONF_HOST]}_assist_satellite"
         self._last_stt_text: str | None = None
 
@@ -227,7 +242,7 @@ class VigiAssistSatellite(VigiEntity, AssistSatelliteEntity):
             "-i",
             rtsp_url,
             "-t",
-            str(CONVERSATION_LISTEN_SECONDS),
+            str(self._listen_seconds),
             "-vn",
             "-ac",
             "1",
@@ -286,7 +301,7 @@ class VigiAssistSatellite(VigiEntity, AssistSatelliteEntity):
             "-i",
             rtsp_url,
             "-t",
-            str(CONVERSATION_LISTEN_SECONDS),
+            str(self._listen_seconds),
             "-vn",
             "-ac",
             "1",
