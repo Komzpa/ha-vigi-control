@@ -171,7 +171,7 @@ class VigiAssistSatellite(VigiEntity, AssistSatelliteEntity):
             "-acodec",
             "pcm_s16le",
             "-f",
-            "wav",
+            "s16le",
             "pipe:1",
             stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.PIPE,
