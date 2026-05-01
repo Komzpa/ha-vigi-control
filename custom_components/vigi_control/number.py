@@ -76,6 +76,14 @@ COMMON_NUMBERS = [
             "digital_sensitivity", value
         ),
     ),
+    VigiNumberDescription(
+        key="speaker_volume",
+        translation_key="speaker_volume",
+        entity_category=EntityCategory.CONFIG,
+        value_fn=lambda state: state.speaker_volume,
+        supported_fn=lambda state: state.has_speaker("volume"),
+        set_fn=lambda coordinator, value: coordinator.client.async_set_speaker_volume(value),
+    ),
 ]
 
 

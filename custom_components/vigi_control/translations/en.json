@@ -111,6 +111,9 @@
       },
       "motion_digital_sensitivity": {
         "name": "Motion digital sensitivity"
+      },
+      "speaker_volume": {
+        "name": "Speaker volume"
       }
     },
     "select": {

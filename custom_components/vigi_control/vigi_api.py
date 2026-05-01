@@ -28,6 +28,7 @@ class VigiDeviceState:
     motion: Mapping[str, Any]
     alarm: Mapping[str, Any]
     lens_mask: Mapping[str, Any]
+    audio: Mapping[str, Any]
 
     def has_image_switch(self, key: str) -> bool:
         return key in self.switch
@@ -43,6 +44,9 @@ class VigiDeviceState:
 
     def has_lens_mask(self, key: str) -> bool:
         return _nested(self.lens_mask, "lens_mask_info", key) is not None
+
+    def has_speaker(self, key: str) -> bool:
+        return _nested(self.audio, "speaker", key) is not None
 
     def has_video_main(self, key: str) -> bool:
         return _nested(self.video, "main", key) is not None
@@ -114,6 +118,14 @@ class VigiDeviceState:
                 return unquote(value)
         return None
 
+    @property
+    def speaker_volume(self) -> int | None:
+        value = _nested(self.audio, "speaker", "volume")
+        try:
+            return int(value)
+        except (TypeError, ValueError):
+            return None
+
 
 def _nested(data: Mapping[str, Any], *path: str) -> Any:
     current: Any = data
@@ -157,6 +169,10 @@ class VigiCameraClient:
             {"method": "get", "lens_mask": {"name": ["lens_mask_info"]}},
             "lens_mask",
         )
+        audio = await self._optional_request(
+            {"method": "get", "audio_config": {"name": ["speaker"]}},
+            "audio_config",
+        )
         return VigiDeviceState(
             switch=image.get("switch", {}) or {},
             common=image.get("common", {}) or {},
@@ -165,6 +181,7 @@ class VigiCameraClient:
             motion=motion,
             alarm=alarm,
             lens_mask=lens_mask,
+            audio=audio,
         )
 
     async def async_get_image_sections(self, *sections: str) -> dict[str, Any]:
@@ -321,6 +338,7 @@ class VigiCameraClient:
                     "msg_alarm": {
                         "manual_msg_alarm": {
                             "action": "start",
+                            "alarm_volume": "100",
                         },
                     },
                 }
@@ -348,6 +366,20 @@ class VigiCameraClient:
                         "lens_mask_info": {
                             "enabled": "on" if enabled else "off",
                             "types": ["enabled"],
+                        },
+                    },
+                }
+            )
+
+    async def async_set_speaker_volume(self, volume: int) -> None:
+        volume = max(0, min(100, round(volume)))
+        async with self._lock:
+            await self._request(
+                {
+                    "method": "set",
+                    "audio_config": {
+                        "speaker": {
+                            "volume": str(volume),
                         },
                     },
                 }
