@@ -5,7 +5,14 @@ from homeassistant import config_entries
 from homeassistant.const import CONF_HOST, CONF_NAME, CONF_PASSWORD, CONF_USERNAME
 from homeassistant.helpers import device_registry as dr
 
-from .const import CONF_FRIGATE_DEVICE_IDENTIFIER, DEFAULT_NAME, DOMAIN
+from .const import (
+    CONF_FRIGATE_DEVICE_IDENTIFIER,
+    CONF_GO2RTC_API_URL,
+    CONF_GO2RTC_STREAM,
+    DEFAULT_GO2RTC_API_URL,
+    DEFAULT_NAME,
+    DOMAIN,
+)
 from .frigate import find_existing_frigate_config, load_frigate_candidates
 from .onvif_discovery import discover_onvif_candidates
 from .vigi_api import VigiApiError, VigiCameraClient
@@ -15,6 +22,10 @@ class VigiControlConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     VERSION = 1
     _frigate_candidates = None
     _onvif_candidates = None
+
+    @staticmethod
+    def async_get_options_flow(config_entry):
+        return VigiControlOptionsFlow(config_entry)
 
     async def async_step_user(self, user_input=None):
         return self.async_show_menu(
@@ -228,3 +239,33 @@ def _find_frigate_identifier_for_camera_key(hass, camera_key: str) -> str:
         if identifier.lower().endswith(suffix):
             return identifier
     return ""
+
+
+class VigiControlOptionsFlow(config_entries.OptionsFlow):
+    def __init__(self, config_entry):
+        self._config_entry = config_entry
+
+    async def async_step_init(self, user_input=None):
+        if user_input is not None:
+            data = {
+                CONF_GO2RTC_API_URL: user_input.get(CONF_GO2RTC_API_URL, "").strip(),
+                CONF_GO2RTC_STREAM: user_input.get(CONF_GO2RTC_STREAM, "").strip(),
+            }
+            return self.async_create_entry(title="", data=data)
+
+        options = self._config_entry.options
+        return self.async_show_form(
+            step_id="init",
+            data_schema=vol.Schema(
+                {
+                    vol.Optional(
+                        CONF_GO2RTC_API_URL,
+                        default=options.get(CONF_GO2RTC_API_URL, DEFAULT_GO2RTC_API_URL),
+                    ): str,
+                    vol.Optional(
+                        CONF_GO2RTC_STREAM,
+                        default=options.get(CONF_GO2RTC_STREAM, ""),
+                    ): str,
+                }
+            ),
+        )

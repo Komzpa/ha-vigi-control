@@ -26,6 +26,7 @@ The first tested device is TP-Link VIGI C440-W. The local VIGI HTTPS API is not 
 - Switches for WDR, HLC, dehaze, EIS, anti-flicker, backlight compensation, lens distortion correction, full-color enhancements, camera motion detection, camera-side message alarm settings, and privacy/lens mask.
 - Buttons to start and stop the camera's manual alarm immediately, where the firmware supports VIGI/Tapo `manual_msg_alarm`.
 - Speaker volume control, where the camera exposes `audio_config.speaker.volume`.
+- Optional talk-back speaker media player for Home Assistant TTS/announcements through a configured go2rtc `vigi://` stream.
 - Diagnostic sensors for current white-light/infrared/smart-white-light state and firmware metadata when available.
 - Optional setup path that reads local Frigate YAML and imports camera host/credentials from RTSP URLs.
 - Feature detection from the camera's first API payload: entities are created only for fields the camera actually reports.
@@ -40,6 +41,7 @@ For each configured camera, VIGI Control creates a Home Assistant device with en
 | --- | --- |
 | `light` | White light / floodlight with brightness |
 | `button` | Manual alarm start/stop |
+| `media_player` | Optional talk-back speaker for TTS/announcements via go2rtc |
 | `number` | White-light level, speaker volume, image brightness, contrast, saturation, chroma, sharpness, WDR gain, exposure gain, infrared/white-light auto-switch delays, motion digital sensitivity |
 | `select` | Night-vision mode, flip, rotate, flicker, image scene mode, white balance, exposure type, Smart IR |
 | `switch` | WDR, HLC, dehaze, EIS, auto-exposure anti-flicker, backlight compensation, lens distortion correction, full-color enhancement flags, camera motion detection flags, message alarm flags, privacy/lens mask |
@@ -64,6 +66,15 @@ Recommended architecture:
 1. Frigate manages RTSP streams, snapshots, recordings, and detections.
 2. VIGI Control manages camera-side settings and illumination.
 3. Automations combine both surfaces, for example turning the VIGI white light on when Frigate sees a person.
+
+## Talk-back TTS
+
+VIGI Control can expose an optional `media_player` entity that plays Home Assistant media/TTS through the camera's two-way-audio speaker path. This requires a reachable go2rtc API with a stream defined as `vigi://...` for the same camera. Configure these per camera from the integration options:
+
+- **go2rtc API URL**: for example `http://192.168.100.30:19840`
+- **go2rtc stream**: for example `living_vigi`
+
+The entity resolves Home Assistant media sources, including TTS-generated media, and asks go2rtc to play them to the camera backchannel as `PCMA/8000`. On tested VIGI C440-W firmware this is the codec the camera actually negotiates for talk-back audio, so speech quality is telephone-grade but usable for short announcements and wake fallback messages.
 
 ## Discovery
 
