@@ -1,6 +1,5 @@
 from pathlib import Path
 
-
 ASSIST_SATELLITE = (
     Path(__file__).resolve().parents[1]
     / "custom_components"

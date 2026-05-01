@@ -9,6 +9,11 @@ from pathlib import Path
 
 import aiohttp
 from homeassistant.components import conversation, stt
+from homeassistant.components.assist_pipeline import (
+    PipelineEvent,
+    PipelineEventType,
+    async_get_pipeline,
+)
 from homeassistant.components.assist_satellite import (
     AssistSatelliteAnnouncement,
     AssistSatelliteConfiguration,
@@ -16,11 +21,6 @@ from homeassistant.components.assist_satellite import (
     AssistSatelliteEntityFeature,
 )
 from homeassistant.components.assist_satellite.entity import AssistSatelliteState
-from homeassistant.components.assist_pipeline import (
-    PipelineEvent,
-    PipelineEventType,
-    async_get_pipeline,
-)
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_HOST
 from homeassistant.core import HomeAssistant

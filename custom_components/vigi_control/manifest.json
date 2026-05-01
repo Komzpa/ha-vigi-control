@@ -5,6 +5,9 @@
     "@Komzpa"
   ],
   "config_flow": true,
+  "dependencies": [
+    "assist_pipeline"
+  ],
   "documentation": "https://github.com/Komzpa/ha-vigi-control",
   "iot_class": "local_polling",
   "issue_tracker": "https://github.com/Komzpa/ha-vigi-control/issues",
@@ -13,5 +16,5 @@
     "PyYAML>=6.0.0",
     "WSDiscovery==2.1.2"
   ],
-  "version": "0.6.4"
+  "version": "0.6.5"
 }
