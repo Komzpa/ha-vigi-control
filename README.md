@@ -42,7 +42,7 @@ For each configured camera, VIGI Control creates a Home Assistant device with en
 | `light` | White light / floodlight with brightness |
 | `button` | Manual alarm start/stop |
 | `media_player` | Optional talk-back speaker for TTS/announcements via go2rtc |
-| `assist_satellite` | Optional Assist announcement surface backed by the same talk-back speaker |
+| `assist_satellite` | Optional Assist announcement and start-conversation surface backed by go2rtc talk-back plus camera microphone audio |
 | `number` | White-light level, speaker volume, image brightness, contrast, saturation, chroma, sharpness, WDR gain, exposure gain, infrared/white-light auto-switch delays, motion digital sensitivity |
 | `select` | Night-vision mode, flip, rotate, flicker, image scene mode, white balance, exposure type, Smart IR |
 | `switch` | WDR, HLC, dehaze, EIS, auto-exposure anti-flicker, backlight compensation, lens distortion correction, full-color enhancement flags, camera motion detection flags, message alarm flags, privacy/lens mask |
@@ -79,7 +79,7 @@ If go2rtc is embedded in the Frigate Home Assistant add-on, prefer the add-on DN
 
 The media player resolves Home Assistant media sources, including TTS-generated media, and asks go2rtc to play them to the camera backchannel as `PCMA/8000`. On tested VIGI C440-W firmware this is the codec the camera actually negotiates for talk-back audio, so speech quality is telephone-grade but usable for short announcements and wake fallback messages.
 
-When talk-back is configured, VIGI Control also exposes an Assist satellite entity with announcement support. Wake-word and speech-to-text support require a microphone-stream worker that feeds the Home Assistant Assist pipeline and are not part of this first talk-back surface.
+When talk-back is configured, VIGI Control also exposes an Assist satellite entity. It supports announcements and start-conversation actions: after the start announcement, VIGI Control reads the camera microphone from the same go2rtc stream, converts it to 16 kHz mono PCM WAV with ffmpeg, and feeds Home Assistant's Assist pipeline. The recognized text is sent to the configured conversation agent; if that agent is missing, VIGI Control falls back to Home Assistant's built-in conversation agent instead of failing before STT. Continuous wake-word listening is a separate always-on microphone loop and is not enabled by default.
 
 ## Discovery
 

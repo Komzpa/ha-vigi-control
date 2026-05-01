@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from urllib.parse import urlencode
+from urllib.parse import urlencode, urlparse, urlunparse
 
 import aiohttp
 
@@ -48,6 +48,19 @@ def build_stream_post_url(config: Go2RtcTalkConfig, media_url: str) -> str:
         }
     )
     return f"{root}/api/streams?{query}"
+
+
+def build_rtsp_stream_url(config: Go2RtcTalkConfig) -> str:
+    """Build the RTSP URL for reading a go2rtc stream from the same service."""
+
+    root = normalize_go2rtc_api_url(config.api_url)
+    parsed = urlparse(root)
+    if not parsed.hostname:
+        raise Go2RtcError("go2rtc API URL has no host")
+
+    port = 8554 if parsed.port == 1984 else parsed.port
+    netloc = parsed.hostname if port is None else f"{parsed.hostname}:{port}"
+    return urlunparse(("rtsp", netloc, f"/{config.stream.strip()}", "", "", ""))
 
 
 async def async_play_talkback_url(
