@@ -24,6 +24,8 @@ The first tested device is TP-Link VIGI C440-W. The local VIGI HTTPS API is not 
 - White-light level number entity using the camera's real 1-5 step scale.
 - Image controls for brightness, contrast, saturation, chroma, sharpness, WDR gain, exposure gain, night-vision auto-switch delays, flip, rotate, flicker, scene, white balance, exposure mode, and Smart IR where the camera exposes those fields.
 - Switches for WDR, HLC, dehaze, EIS, anti-flicker, backlight compensation, lens distortion correction, full-color enhancements, camera motion detection, camera-side message alarm settings, and privacy/lens mask.
+- Buttons to start and stop the camera's manual alarm immediately, where the firmware supports VIGI/Tapo `manual_msg_alarm`.
+- Speaker volume control, where the camera exposes `audio_config.speaker.volume`.
 - Diagnostic sensors for current white-light/infrared/smart-white-light state and firmware metadata when available.
 - Optional setup path that reads local Frigate YAML and imports camera host/credentials from RTSP URLs.
 - Feature detection from the camera's first API payload: entities are created only for fields the camera actually reports.
@@ -37,7 +39,8 @@ For each configured camera, VIGI Control creates a Home Assistant device with en
 | Platform | Entities |
 | --- | --- |
 | `light` | White light / floodlight with brightness |
-| `number` | White-light level, image brightness, contrast, saturation, chroma, sharpness, WDR gain, exposure gain, infrared/white-light auto-switch delays, motion digital sensitivity |
+| `button` | Manual alarm start/stop |
+| `number` | White-light level, speaker volume, image brightness, contrast, saturation, chroma, sharpness, WDR gain, exposure gain, infrared/white-light auto-switch delays, motion digital sensitivity |
 | `select` | Night-vision mode, flip, rotate, flicker, image scene mode, white balance, exposure type, Smart IR |
 | `switch` | WDR, HLC, dehaze, EIS, auto-exposure anti-flicker, backlight compensation, lens distortion correction, full-color enhancement flags, camera motion detection flags, message alarm flags, privacy/lens mask |
 | `sensor` | Firmware, current light/infrared state, stream resolution/encoding/bitrate, motion sensitivity, message alarm mode |
@@ -47,7 +50,7 @@ The exact entity set may change by model and firmware. Unsupported API sections 
 Home Assistant placement is intentionally split by how often the control is useful:
 
 - **Controls**: the everyday white-light entity with on/off and brightness.
-- **Configuration**: camera tuning such as night-vision mode, privacy/lens mask, the raw white-light level, image adjustment numbers/selects, camera-side motion detection, message alarm settings, and auto-switch delays.
+- **Configuration**: camera tuning such as night-vision mode, privacy/lens mask, the raw white-light level, speaker volume, image adjustment numbers/selects, camera-side motion detection, message alarm settings, manual alarm buttons, and auto-switch delays.
 - **Diagnostic**: read-only firmware, stream, light-state, motion, and alarm sensors.
 
 ## Frigate Setup
@@ -100,6 +103,7 @@ Copy `custom_components/vigi_control` into Home Assistant's `custom_components` 
 - VIGI C440-W white-light brightness is effectively a 5-step value, not a true 0-255 dimmer.
 - Camera auto-exposure may make the visual brightness change look subtler than the API state change.
 - The white-light off path is order-sensitive on tested firmware: the integration sets `wtl_type=auto` before switching `night_vision_mode` back to infrared.
+- Message alarm switches configure camera-side detection alarm behavior; use the manual alarm start/stop buttons when an automation needs the camera to sound immediately.
 - This integration does not create a camera entity by default, to avoid duplicate Frigate/ONVIF camera feeds.
 - Camera-side motion/alarm controls affect the camera firmware itself. If Frigate is your detection source of truth, keep Frigate automations pointed at Frigate entities and use these switches only when you deliberately want to change camera-side behavior.
 
@@ -107,7 +111,7 @@ Copy `custom_components/vigi_control` into Home Assistant's `custom_components` 
 
 | Model | Firmware | Notes |
 | --- | --- | --- |
-| VIGI C440-W | `3.0.2 Build 240611 Rel.77271n` | White light, image controls, motion/alarm controls, stream diagnostics |
+| VIGI C440-W | `3.0.2 Build 240611 Rel.77271n` | White light, speaker volume, manual alarm buttons, image controls, motion/alarm controls, stream diagnostics |
 
 ## Troubleshooting
 
@@ -123,6 +127,5 @@ Early local integration. Tested against VIGI C440-W firmware from a Home Assista
 
 Planned next mappings:
 
-- Audio controls where the camera exposes stable fields.
 - Camera event toggles only when they add value beyond Frigate events.
 - More model/firmware reports from other VIGI cameras.
