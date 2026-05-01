@@ -134,6 +134,11 @@ class VigiDeviceState:
         except (TypeError, ValueError):
             return None
 
+    @property
+    def alarm_type(self) -> str | None:
+        value = _nested(self.alarm, "chn1_msg_alarm_info", "alarm_type")
+        return value if isinstance(value, str) else None
+
 
 def _nested(data: Mapping[str, Any], *path: str) -> Any:
     current: Any = data
@@ -338,7 +343,7 @@ class VigiCameraClient:
                 }
             )
 
-    async def async_start_manual_alarm(self) -> None:
+    async def async_start_manual_alarm(self, alarm_type: str = "1") -> None:
         async with self._lock:
             await self._request(
                 {
@@ -346,7 +351,7 @@ class VigiCameraClient:
                     "msg_alarm": {
                         "manual_msg_alarm": {
                             "action": "start",
-                            "alarm_type": "1",
+                            "alarm_type": alarm_type,
                             "alarm_volume": "100",
                         },
                     },
@@ -361,6 +366,19 @@ class VigiCameraClient:
                     "msg_alarm": {
                         "manual_msg_alarm": {
                             "action": "stop",
+                        },
+                    },
+                }
+            )
+
+    async def async_test_alarm_audio(self, alarm_type: str) -> None:
+        async with self._lock:
+            await self._request(
+                {
+                    "method": "do",
+                    "usr_def_audio_alarm": {
+                        "test_audio": {
+                            "id": int(alarm_type),
                         },
                     },
                 }

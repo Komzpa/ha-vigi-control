@@ -26,13 +26,23 @@ BUTTONS = [
         key="manual_alarm_start",
         translation_key="manual_alarm_start",
         supported_fn=lambda state: state.has_alarm("enabled"),
-        press_fn=lambda coordinator: coordinator.client.async_start_manual_alarm(),
+        press_fn=lambda coordinator: coordinator.client.async_start_manual_alarm(
+            coordinator.data.alarm_type or "1"
+        ),
     ),
     VigiButtonDescription(
         key="manual_alarm_stop",
         translation_key="manual_alarm_stop",
         supported_fn=lambda state: state.has_alarm("enabled"),
         press_fn=lambda coordinator: coordinator.client.async_stop_manual_alarm(),
+    ),
+    VigiButtonDescription(
+        key="test_alarm_audio",
+        translation_key="test_alarm_audio",
+        supported_fn=lambda state: state.has_alarm("alarm_type"),
+        press_fn=lambda coordinator: coordinator.client.async_test_alarm_audio(
+            coordinator.data.alarm_type or "1"
+        ),
     ),
 ]
 

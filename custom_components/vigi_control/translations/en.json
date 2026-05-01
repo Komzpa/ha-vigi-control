@@ -71,6 +71,9 @@
       },
       "manual_alarm_stop": {
         "name": "Manual alarm stop"
+      },
+      "test_alarm_audio": {
+        "name": "Test alarm audio"
       }
     },
     "light": {
@@ -147,6 +150,13 @@
       },
       "smart_ir": {
         "name": "Smart IR"
+      },
+      "message_alarm_sound_type": {
+        "name": "Message alarm sound type",
+        "state": {
+          "0": "Alarm tone",
+          "1": "Ringtone"
+        }
       }
     },
     "sensor": {

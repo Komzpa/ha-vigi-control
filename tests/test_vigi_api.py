@@ -39,7 +39,7 @@ def test_device_state_reads_known_white_light_fields():
         device_info={"model": "VIGI C440-W", "fw_ver": "3.0.2"},
         video={},
         motion={},
-        alarm={},
+        alarm={"chn1_msg_alarm_info": {"alarm_type": "1"}},
         lens_mask={},
         audio={"speaker": {"system_volume": "100", "volume": "80"}},
     )
@@ -55,6 +55,7 @@ def test_device_state_reads_known_white_light_fields():
     assert state.firmware_version == "3.0.2"
     assert state.speaker_volume == 80
     assert state.speaker_system_volume == 100
+    assert state.alarm_type == "1"
 
 
 def test_device_state_treats_infrared_mode_as_white_light_off():
@@ -103,12 +104,12 @@ async def _capture_request(client: VigiCameraClient, calls: list[dict]) -> None:
     client._request = types.MethodType(fake_request, client)
 
 
-def test_start_manual_alarm_uses_vigi_manual_alarm_action():
+def test_start_manual_alarm_uses_selected_vigi_manual_alarm_action():
     client = VigiCameraClient("camera.local", "user", "pass")
     calls: list[dict] = []
     asyncio.run(_capture_request(client, calls))
 
-    asyncio.run(client.async_start_manual_alarm())
+    asyncio.run(client.async_start_manual_alarm("0"))
 
     assert calls == [
         {
@@ -116,7 +117,7 @@ def test_start_manual_alarm_uses_vigi_manual_alarm_action():
             "msg_alarm": {
                 "manual_msg_alarm": {
                     "action": "start",
-                    "alarm_type": "1",
+                    "alarm_type": "0",
                     "alarm_volume": "100",
                 }
             },
@@ -165,5 +166,20 @@ def test_set_speaker_system_volume_clamps_and_uses_audio_config():
         {
             "method": "set",
             "audio_config": {"speaker": {"system_volume": "0"}},
+        }
+    ]
+
+
+def test_test_alarm_audio_uses_vigi_ui_action():
+    client = VigiCameraClient("camera.local", "user", "pass")
+    calls: list[dict] = []
+    asyncio.run(_capture_request(client, calls))
+
+    asyncio.run(client.async_test_alarm_audio("1"))
+
+    assert calls == [
+        {
+            "method": "do",
+            "usr_def_audio_alarm": {"test_audio": {"id": 1}},
         }
     ]

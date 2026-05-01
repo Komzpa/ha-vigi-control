@@ -20,6 +20,8 @@ NIGHT_VISION_MODES = [
     "wtl_night_vision",
 ]
 
+ALARM_SOUND_TYPES = ["0", "1"]
+
 
 @dataclass(frozen=True, kw_only=True)
 class VigiSelectDescription(SelectEntityDescription):
@@ -105,6 +107,17 @@ SELECTS = [
         supported_fn=lambda state: state.has_image_common("smartir"),
         set_fn=lambda coordinator, value: coordinator.client.async_set_image_common_value(
             "smartir", value
+        ),
+    ),
+    VigiSelectDescription(
+        key="message_alarm_sound_type",
+        translation_key="message_alarm_sound_type",
+        entity_category=EntityCategory.CONFIG,
+        options=ALARM_SOUND_TYPES,
+        value_fn=lambda state: state.alarm_type,
+        supported_fn=lambda state: state.has_alarm("alarm_type"),
+        set_fn=lambda coordinator, value: coordinator.client.async_set_alarm_value(
+            "alarm_type", value
         ),
     ),
 ]
