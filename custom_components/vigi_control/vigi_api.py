@@ -338,6 +338,7 @@ class VigiCameraClient:
                     "msg_alarm": {
                         "manual_msg_alarm": {
                             "action": "start",
+                            "alarm_type": "1",
                             "alarm_volume": "100",
                         },
                     },

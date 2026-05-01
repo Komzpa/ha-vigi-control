@@ -111,7 +111,13 @@ def test_start_manual_alarm_uses_vigi_manual_alarm_action():
     assert calls == [
         {
             "method": "do",
-            "msg_alarm": {"manual_msg_alarm": {"action": "start", "alarm_volume": "100"}},
+            "msg_alarm": {
+                "manual_msg_alarm": {
+                    "action": "start",
+                    "alarm_type": "1",
+                    "alarm_volume": "100",
+                }
+            },
         }
     ]
 
