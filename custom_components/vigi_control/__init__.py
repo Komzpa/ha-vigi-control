@@ -9,6 +9,7 @@ from .coordinator import VigiControlCoordinator
 from .vigi_api import VigiCameraClient
 
 PLATFORMS = [
+    Platform.BUTTON,
     Platform.LIGHT,
     Platform.NUMBER,
     Platform.SELECT,

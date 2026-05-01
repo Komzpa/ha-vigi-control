@@ -313,6 +313,32 @@ class VigiCameraClient:
                 }
             )
 
+    async def async_start_manual_alarm(self) -> None:
+        async with self._lock:
+            await self._request(
+                {
+                    "method": "do",
+                    "msg_alarm": {
+                        "manual_msg_alarm": {
+                            "action": "start",
+                        },
+                    },
+                }
+            )
+
+    async def async_stop_manual_alarm(self) -> None:
+        async with self._lock:
+            await self._request(
+                {
+                    "method": "do",
+                    "msg_alarm": {
+                        "manual_msg_alarm": {
+                            "action": "stop",
+                        },
+                    },
+                }
+            )
+
     async def async_set_lens_mask_enabled(self, enabled: bool) -> None:
         async with self._lock:
             await self._request(

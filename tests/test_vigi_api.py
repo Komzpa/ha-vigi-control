@@ -1,4 +1,6 @@
 import sys
+import types
+import asyncio
 from importlib.util import module_from_spec, spec_from_file_location
 from pathlib import Path
 
@@ -84,3 +86,41 @@ def test_device_state_reports_supported_fields_from_payload_shape():
     assert state.has_motion("enabled") is True
     assert state.has_alarm("enabled") is True
     assert state.has_lens_mask("enabled") is False
+
+
+async def _capture_request(client: VigiCameraClient, calls: list[dict]) -> None:
+    async def fake_request(self, body):
+        calls.append(body)
+        return {"error_code": 0}
+
+    client._request = types.MethodType(fake_request, client)
+
+
+def test_start_manual_alarm_uses_vigi_manual_alarm_action():
+    client = VigiCameraClient("camera.local", "user", "pass")
+    calls: list[dict] = []
+    asyncio.run(_capture_request(client, calls))
+
+    asyncio.run(client.async_start_manual_alarm())
+
+    assert calls == [
+        {
+            "method": "do",
+            "msg_alarm": {"manual_msg_alarm": {"action": "start"}},
+        }
+    ]
+
+
+def test_stop_manual_alarm_uses_vigi_manual_alarm_action():
+    client = VigiCameraClient("camera.local", "user", "pass")
+    calls: list[dict] = []
+    asyncio.run(_capture_request(client, calls))
+
+    asyncio.run(client.async_stop_manual_alarm())
+
+    assert calls == [
+        {
+            "method": "do",
+            "msg_alarm": {"manual_msg_alarm": {"action": "stop"}},
+        }
+    ]

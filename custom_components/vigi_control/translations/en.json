@@ -65,6 +65,14 @@
     }
   },
   "entity": {
+    "button": {
+      "manual_alarm_start": {
+        "name": "Manual alarm start"
+      },
+      "manual_alarm_stop": {
+        "name": "Manual alarm stop"
+      }
+    },
     "light": {
       "white_light": {
         "name": "White light"
