@@ -6,12 +6,14 @@ from homeassistant.const import CONF_HOST, CONF_NAME, CONF_PASSWORD, CONF_USERNA
 from homeassistant.helpers import device_registry as dr
 
 from .const import (
+    CONF_ASSIST_AUDIO_RETENTION_MB,
     CONF_ASSIST_SAVE_AUDIO,
     CONF_FRIGATE_DEVICE_IDENTIFIER,
     CONF_GO2RTC_API_URL,
     CONF_GO2RTC_MIC_STREAM,
     CONF_GO2RTC_STREAM,
     CONF_OPENCLAW_LISTEN_SECONDS,
+    DEFAULT_ASSIST_AUDIO_RETENTION_MB,
     DEFAULT_ASSIST_SAVE_AUDIO,
     DEFAULT_GO2RTC_API_URL,
     DEFAULT_NAME,
@@ -271,6 +273,12 @@ class VigiControlOptionsFlow(config_entries.OptionsFlow):
                         DEFAULT_ASSIST_SAVE_AUDIO,
                     )
                 ),
+                CONF_ASSIST_AUDIO_RETENTION_MB: int(
+                    user_input.get(
+                        CONF_ASSIST_AUDIO_RETENTION_MB,
+                        DEFAULT_ASSIST_AUDIO_RETENTION_MB,
+                    )
+                ),
             }
             return self.async_create_entry(title="", data=data)
 
@@ -305,6 +313,13 @@ class VigiControlOptionsFlow(config_entries.OptionsFlow):
                             DEFAULT_ASSIST_SAVE_AUDIO,
                         ),
                     ): bool,
+                    vol.Optional(
+                        CONF_ASSIST_AUDIO_RETENTION_MB,
+                        default=options.get(
+                            CONF_ASSIST_AUDIO_RETENTION_MB,
+                            DEFAULT_ASSIST_AUDIO_RETENTION_MB,
+                        ),
+                    ): vol.All(vol.Coerce(int), vol.Range(min=0, max=102400)),
                 }
             ),
         )

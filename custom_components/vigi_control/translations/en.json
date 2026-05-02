@@ -73,7 +73,8 @@
           "go2rtc_stream": "go2rtc stream",
           "go2rtc_mic_stream": "go2rtc microphone stream",
           "openclaw_listen_seconds": "Assist listen seconds",
-          "assist_save_audio": "Save Assist audio captures"
+          "assist_save_audio": "Save Assist audio captures",
+          "assist_audio_retention_mb": "Assist audio retention (MiB)"
         }
       }
     }

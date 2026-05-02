@@ -77,6 +77,7 @@ VIGI Control can expose an optional `media_player` entity that plays Home Assist
 - **go2rtc microphone stream**: optional separate receive stream for the camera microphone, for example Frigate's `living_sub`; if empty, VIGI Control reuses the talk-back stream.
 - **Assist listen seconds**: microphone capture window for Home Assistant STT, default `5` seconds. Increase it for longer commands; keep it short for alarm/wake phrases.
 - **Save Assist audio captures**: debugging option that saves each Assist microphone capture as a 16 kHz mono WAV file plus a JSON sidecar under `/config/vigi_assist_captures`. Keep it disabled unless you are collecting STT regression fixtures.
+- **Assist audio retention (MiB)**: disk budget for saved Assist captures, default `1024` MiB. Oldest captures are pruned after each new capture when the directory grows past this budget; set `0` to disable pruning.
 
 If go2rtc is embedded in the Frigate Home Assistant add-on, prefer the add-on DNS name from Home Assistant Core, for example `http://ccab4aaf-frigate:1984`, instead of running a second go2rtc instance.
 

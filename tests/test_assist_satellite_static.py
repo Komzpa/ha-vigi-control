@@ -41,3 +41,12 @@ def test_assist_satellite_can_save_stt_audio_captures():
     assert "vigi_assist_captures" in source
     assert "wave.open" in source
     assert "_capture_audio_stream" in source
+
+
+def test_assist_satellite_prunes_captures_by_disk_budget():
+    source = ASSIST_SATELLITE.read_text(encoding="utf-8")
+
+    assert "CONF_ASSIST_AUDIO_RETENTION_MB" in source
+    assert "retention_bytes" in source
+    assert "MAX_ASSIST_AUDIO_CAPTURES" not in source
+    assert "total_bytes <= retention_bytes" in source

@@ -30,11 +30,13 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .const import (
+    CONF_ASSIST_AUDIO_RETENTION_MB,
     CONF_ASSIST_SAVE_AUDIO,
     CONF_GO2RTC_API_URL,
     CONF_GO2RTC_MIC_STREAM,
     CONF_GO2RTC_STREAM,
     CONF_OPENCLAW_LISTEN_SECONDS,
+    DEFAULT_ASSIST_AUDIO_RETENTION_MB,
     DEFAULT_ASSIST_SAVE_AUDIO,
     DEFAULT_OPENCLAW_LISTEN_SECONDS,
     DOMAIN,
@@ -46,7 +48,7 @@ from .go2rtc import Go2RtcTalkConfig, async_play_talkback_url, build_rtsp_stream
 _LOGGER = logging.getLogger(__name__)
 
 ASSIST_AUDIO_CAPTURE_DIR = "vigi_assist_captures"
-MAX_ASSIST_AUDIO_CAPTURES = 100
+BYTES_PER_MIB = 1024 * 1024
 
 
 async def async_setup_entry(
@@ -83,6 +85,22 @@ def _listen_seconds(entry: ConfigEntry) -> int:
         return DEFAULT_OPENCLAW_LISTEN_SECONDS
 
     return min(12, max(3, value))
+
+
+def _assist_audio_retention_bytes(entry: ConfigEntry) -> int | None:
+    try:
+        retention_mb = int(
+            entry.options.get(
+                CONF_ASSIST_AUDIO_RETENTION_MB,
+                DEFAULT_ASSIST_AUDIO_RETENTION_MB,
+            )
+        )
+    except (TypeError, ValueError):
+        retention_mb = DEFAULT_ASSIST_AUDIO_RETENTION_MB
+
+    if retention_mb <= 0:
+        return None
+    return retention_mb * BYTES_PER_MIB
 
 
 class VigiAssistSatellite(VigiEntity, AssistSatelliteEntity):
@@ -222,6 +240,7 @@ class VigiAssistSatellite(VigiEntity, AssistSatelliteEntity):
                 metadata.language,
                 captured_chunks,
                 result,
+                _assist_audio_retention_bytes(self._entry),
             )
         if result.result != stt.SpeechResultState.SUCCESS:
             _LOGGER.warning("VIGI Assist speech-to-text failed: %s", result.result)
@@ -342,6 +361,7 @@ def _write_assist_audio_capture(
     language: str | None,
     chunks: list[bytes],
     result: Any,
+    retention_bytes: int | None,
 ) -> None:
     """Write a WAV STT fixture and sidecar metadata for later regression tests."""
 
@@ -372,17 +392,34 @@ def _write_assist_audio_capture(
         "sample_width_bytes": 2,
         "created_at": timestamp,
         "wav_path": str(wav_path),
+        "retention_bytes": retention_bytes,
     }
     wav_path.with_suffix(".json").write_text(
         json.dumps(metadata, ensure_ascii=False, indent=2),
         encoding="utf-8",
     )
 
-    _prune_assist_audio_captures(capture_dir)
+    _prune_assist_audio_captures(capture_dir, retention_bytes)
 
 
-def _prune_assist_audio_captures(capture_dir: Path) -> None:
+def _prune_assist_audio_captures(capture_dir: Path, retention_bytes: int | None) -> None:
+    if retention_bytes is None:
+        return
+
     wav_paths = sorted(capture_dir.glob("*.wav"), key=lambda path: path.name)
-    for wav_path in wav_paths[:-MAX_ASSIST_AUDIO_CAPTURES]:
+    capture_sizes: list[tuple[Path, int]] = []
+    total_bytes = 0
+    for wav_path in wav_paths:
+        sidecar_path = wav_path.with_suffix(".json")
+        size = wav_path.stat().st_size
+        if sidecar_path.exists():
+            size += sidecar_path.stat().st_size
+        capture_sizes.append((wav_path, size))
+        total_bytes += size
+
+    for wav_path, size in capture_sizes:
+        if total_bytes <= retention_bytes:
+            break
         wav_path.unlink(missing_ok=True)
         wav_path.with_suffix(".json").unlink(missing_ok=True)
+        total_bytes -= size
