@@ -439,7 +439,7 @@ class VigiCameraClient:
         if self._stok is None:
             await self._login()
 
-        data = await self._post(f"/stok={self._stok}/ds", body)
+        data = await self._post(f"/stok={self._stok}/ds", body, allow_error=True)
         if data.get("error_code") == 0:
             return data
 

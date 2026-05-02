@@ -104,6 +104,39 @@ async def _capture_request(client: VigiCameraClient, calls: list[dict]) -> None:
     client._request = types.MethodType(fake_request, client)
 
 
+def test_request_reauthenticates_when_camera_returns_login_challenge():
+    client = VigiCameraClient("camera.local", "user", "pass")
+    client._stok = "expired"
+    calls: list[tuple[str, bool]] = []
+
+    async def fake_post(path, body, allow_error=False):
+        calls.append((path, allow_error))
+        if path == "/stok=expired/ds":
+            return {
+                "error_code": -40401,
+                "data": {
+                    "code": -40407,
+                    "nonce": "abc",
+                    "key": "ignored",
+                    "encrypt_type": ["1", "2"],
+                },
+            }
+        if path == "/stok=fresh/ds":
+            return {"error_code": 0, "image": {"switch": {}}}
+        raise AssertionError(f"unexpected request path: {path}")
+
+    async def fake_login():
+        client._stok = "fresh"
+
+    client._post = fake_post
+    client._login = fake_login
+
+    data = asyncio.run(client._request({"method": "get"}))
+
+    assert data == {"error_code": 0, "image": {"switch": {}}}
+    assert calls == [("/stok=expired/ds", True), ("/stok=fresh/ds", False)]
+
+
 def test_start_manual_alarm_uses_selected_vigi_manual_alarm_action():
     client = VigiCameraClient("camera.local", "user", "pass")
     calls: list[dict] = []
