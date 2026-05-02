@@ -1,8 +1,14 @@
 from __future__ import annotations
 
 import asyncio
+import json
 import logging
+import re
+import wave
 from collections.abc import AsyncIterator
+from datetime import UTC, datetime
+from pathlib import Path
+from typing import Any
 
 import aiohttp
 from homeassistant.components import conversation, stt
@@ -24,10 +30,12 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .const import (
+    CONF_ASSIST_SAVE_AUDIO,
     CONF_GO2RTC_API_URL,
     CONF_GO2RTC_MIC_STREAM,
     CONF_GO2RTC_STREAM,
     CONF_OPENCLAW_LISTEN_SECONDS,
+    DEFAULT_ASSIST_SAVE_AUDIO,
     DEFAULT_OPENCLAW_LISTEN_SECONDS,
     DOMAIN,
 )
@@ -36,6 +44,9 @@ from .entity import VigiEntity
 from .go2rtc import Go2RtcTalkConfig, async_play_talkback_url, build_rtsp_stream_url
 
 _LOGGER = logging.getLogger(__name__)
+
+ASSIST_AUDIO_CAPTURE_DIR = "vigi_assist_captures"
+MAX_ASSIST_AUDIO_CAPTURES = 100
 
 
 async def async_setup_entry(
@@ -190,10 +201,28 @@ class VigiAssistSatellite(VigiEntity, AssistSatelliteEntity):
             )
             return None
 
+        captured_chunks: list[bytes] = []
+        audio_stream = self._camera_pcm_stream()
+        save_assist_audio = bool(
+            self._entry.options.get(CONF_ASSIST_SAVE_AUDIO, DEFAULT_ASSIST_SAVE_AUDIO)
+        )
+        if save_assist_audio:
+            audio_stream = _capture_audio_stream(audio_stream, captured_chunks)
+
         result = await provider.async_process_audio_stream(
             metadata,
-            self._camera_pcm_stream(),
+            audio_stream,
         )
+        if save_assist_audio and captured_chunks:
+            await self.hass.async_add_executor_job(
+                _write_assist_audio_capture,
+                Path(self.hass.config.path(ASSIST_AUDIO_CAPTURE_DIR)),
+                self.entity_id or self._attr_unique_id,
+                engine_id,
+                metadata.language,
+                captured_chunks,
+                result,
+            )
         if result.result != stt.SpeechResultState.SUCCESS:
             _LOGGER.warning("VIGI Assist speech-to-text failed: %s", result.result)
             return None
@@ -293,3 +322,67 @@ class VigiAssistSatellite(VigiEntity, AssistSatelliteEntity):
             stt_output = event.data.get("stt_output")
             if stt_output:
                 self._last_stt_text = stt_output.get("text")
+
+
+async def _capture_audio_stream(
+    stream: AsyncIterator[bytes],
+    captured_chunks: list[bytes],
+) -> AsyncIterator[bytes]:
+    """Tee an audio stream into memory while preserving streaming STT."""
+
+    async for chunk in stream:
+        captured_chunks.append(chunk)
+        yield chunk
+
+
+def _write_assist_audio_capture(
+    capture_dir: Path,
+    entity_id: str,
+    engine_id: str,
+    language: str | None,
+    chunks: list[bytes],
+    result: Any,
+) -> None:
+    """Write a WAV STT fixture and sidecar metadata for later regression tests."""
+
+    capture_dir.mkdir(parents=True, exist_ok=True)
+    timestamp = datetime.now(UTC).strftime("%Y%m%dT%H%M%S.%fZ")
+    slug = re.sub(r"[^a-zA-Z0-9_.-]+", "_", entity_id).strip("_") or "vigi_assist"
+    stem = f"{timestamp}_{slug}"
+    wav_path = capture_dir / f"{stem}.wav"
+    pcm = b"".join(chunks)
+
+    with wave.open(str(wav_path), "wb") as wav_file:
+        wav_file.setnchannels(1)
+        wav_file.setsampwidth(2)
+        wav_file.setframerate(16000)
+        wav_file.writeframes(pcm)
+
+    result_state = getattr(result.result, "value", str(result.result))
+    metadata = {
+        "entity_id": entity_id,
+        "engine_id": engine_id,
+        "language": language,
+        "result": result_state,
+        "text": result.text,
+        "bytes": len(pcm),
+        "duration_seconds": round(len(pcm) / 2 / 16000, 3),
+        "sample_rate": 16000,
+        "channels": 1,
+        "sample_width_bytes": 2,
+        "created_at": timestamp,
+        "wav_path": str(wav_path),
+    }
+    wav_path.with_suffix(".json").write_text(
+        json.dumps(metadata, ensure_ascii=False, indent=2),
+        encoding="utf-8",
+    )
+
+    _prune_assist_audio_captures(capture_dir)
+
+
+def _prune_assist_audio_captures(capture_dir: Path) -> None:
+    wav_paths = sorted(capture_dir.glob("*.wav"), key=lambda path: path.name)
+    for wav_path in wav_paths[:-MAX_ASSIST_AUDIO_CAPTURES]:
+        wav_path.unlink(missing_ok=True)
+        wav_path.with_suffix(".json").unlink(missing_ok=True)

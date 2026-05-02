@@ -32,3 +32,12 @@ def test_assist_satellite_uses_home_assistant_pipeline_not_direct_agent_bridge()
     assert "_process_openclaw_audio" not in source
     assert "_process_openclaw_text" not in source
     assert "openclaw_agent_url" not in source
+
+
+def test_assist_satellite_can_save_stt_audio_captures():
+    source = ASSIST_SATELLITE.read_text(encoding="utf-8")
+
+    assert "CONF_ASSIST_SAVE_AUDIO" in source
+    assert "vigi_assist_captures" in source
+    assert "wave.open" in source
+    assert "_capture_audio_stream" in source
