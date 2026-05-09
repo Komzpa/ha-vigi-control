@@ -82,6 +82,8 @@ If go2rtc is embedded in the Frigate Home Assistant add-on, prefer the add-on DN
 
 VIGI Control does not create a standalone `media_player` for generic Home Assistant TTS/media playback. For that use case, expose the same go2rtc stream with the HACS WebRTC Camera integration (`platform: webrtc`) and keep VIGI Control focused on camera controls plus the Assist satellite microphone flow.
 
+The WebRTC Camera media player is a playback surface only: it can play and stop media, but it does not expose camera speaker volume. Use VIGI Control's speaker volume number entities to adjust the camera-side talk-back level.
+
 When talk-back is configured, VIGI Control also exposes an Assist satellite entity. It supports announcements and start-conversation actions: after the start announcement, VIGI Control reads the camera microphone from the configured go2rtc microphone stream for the configured listen window, normalizes the low camera-mic level, streams raw 16 kHz mono PCM to Home Assistant's configured STT provider, and forwards the recognized text to the configured Home Assistant conversation agent. If that HA agent is missing, VIGI Control falls back to Home Assistant's built-in conversation agent instead of failing before STT. Continuous wake-word listening is a separate always-on microphone loop and is not enabled by default.
 
 ## Discovery
