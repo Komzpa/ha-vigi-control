@@ -6,7 +6,7 @@ from typing import Any
 
 from homeassistant.components.number import NumberEntity, NumberEntityDescription, NumberMode
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.const import EntityCategory, UnitOfTime
+from homeassistant.const import PERCENTAGE, EntityCategory, UnitOfTime
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
@@ -79,6 +79,7 @@ COMMON_NUMBERS = [
     VigiNumberDescription(
         key="speaker_volume",
         translation_key="speaker_volume",
+        native_unit_of_measurement=PERCENTAGE,
         entity_category=EntityCategory.CONFIG,
         value_fn=lambda state: state.speaker_volume,
         supported_fn=lambda state: state.has_speaker("volume"),
@@ -87,6 +88,7 @@ COMMON_NUMBERS = [
     VigiNumberDescription(
         key="speaker_system_volume",
         translation_key="speaker_system_volume",
+        native_unit_of_measurement=PERCENTAGE,
         entity_category=EntityCategory.CONFIG,
         value_fn=lambda state: state.speaker_system_volume,
         supported_fn=lambda state: state.has_speaker("system_volume"),
