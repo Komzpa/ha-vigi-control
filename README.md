@@ -26,7 +26,7 @@ The first tested device is TP-Link VIGI C440-W. The local VIGI HTTPS API is not 
 - Switches for WDR, HLC, dehaze, EIS, anti-flicker, backlight compensation, lens distortion correction, full-color enhancements, camera motion detection, camera-side message alarm settings, and privacy/lens mask.
 - Buttons to start and stop the camera's manual alarm immediately, where the firmware supports VIGI/Tapo `manual_msg_alarm`.
 - Speaker volume control, where the camera exposes `audio_config.speaker.volume`.
-- Optional talk-back speaker media player and Assist satellite announcement entity for Home Assistant TTS/announcements through a configured go2rtc `vigi://` stream.
+- Optional Assist satellite announcement entity for Home Assistant TTS/announcements and microphone capture through a configured go2rtc `vigi://` stream.
 - Diagnostic sensors for current white-light/infrared/smart-white-light state and firmware metadata when available.
 - Optional setup path that reads local Frigate YAML and imports camera host/credentials from RTSP URLs.
 - Feature detection from the camera's first API payload: entities are created only for fields the camera actually reports.
@@ -41,7 +41,6 @@ For each configured camera, VIGI Control creates a Home Assistant device with en
 | --- | --- |
 | `light` | White light / floodlight with brightness |
 | `button` | Manual alarm start/stop |
-| `media_player` | Optional talk-back speaker for TTS/announcements via go2rtc |
 | `assist_satellite` | Optional Assist announcement and start-conversation surface backed by go2rtc talk-back plus camera microphone audio |
 | `number` | White-light level, speaker volume, image brightness, contrast, saturation, chroma, sharpness, WDR gain, exposure gain, infrared/white-light auto-switch delays, motion digital sensitivity |
 | `select` | Night-vision mode, flip, rotate, flicker, image scene mode, white balance, exposure type, Smart IR |
@@ -68,9 +67,9 @@ Recommended architecture:
 2. VIGI Control manages camera-side settings and illumination.
 3. Automations combine both surfaces, for example turning the VIGI white light on when Frigate sees a person.
 
-## Talk-back TTS
+## Assist Satellite
 
-VIGI Control can expose an optional `media_player` entity that plays Home Assistant media/TTS through the camera's two-way-audio speaker path. This requires a reachable go2rtc API with a stream defined as `vigi://...` for the same camera. Configure these per camera from the integration options:
+VIGI Control can expose an optional Assist satellite entity that plays Home Assistant announcements through the camera's two-way-audio speaker path and reads the camera microphone for Home Assistant STT. This requires a reachable go2rtc API with a stream defined as `vigi://...` for the same camera. Configure these per camera from the integration options:
 
 - **go2rtc API URL**: for example `http://192.168.100.30:19840`
 - **go2rtc stream**: for example `living_vigi`
@@ -81,7 +80,7 @@ VIGI Control can expose an optional `media_player` entity that plays Home Assist
 
 If go2rtc is embedded in the Frigate Home Assistant add-on, prefer the add-on DNS name from Home Assistant Core, for example `http://ccab4aaf-frigate:1984`, instead of running a second go2rtc instance.
 
-The media player resolves Home Assistant media sources, including TTS-generated media, and asks go2rtc to play them to the camera backchannel as `PCMA/8000`. On tested VIGI C440-W firmware this is the codec the camera actually negotiates for talk-back audio, so speech quality is telephone-grade but usable for short announcements and wake fallback messages.
+VIGI Control does not create a standalone `media_player` for generic Home Assistant TTS/media playback. For that use case, expose the same go2rtc stream with the HACS WebRTC Camera integration (`platform: webrtc`) and keep VIGI Control focused on camera controls plus the Assist satellite microphone flow.
 
 When talk-back is configured, VIGI Control also exposes an Assist satellite entity. It supports announcements and start-conversation actions: after the start announcement, VIGI Control reads the camera microphone from the configured go2rtc microphone stream for the configured listen window, normalizes the low camera-mic level, streams raw 16 kHz mono PCM to Home Assistant's configured STT provider, and forwards the recognized text to the configured Home Assistant conversation agent. If that HA agent is missing, VIGI Control falls back to Home Assistant's built-in conversation agent instead of failing before STT. Continuous wake-word listening is a separate always-on microphone loop and is not enabled by default.
 
