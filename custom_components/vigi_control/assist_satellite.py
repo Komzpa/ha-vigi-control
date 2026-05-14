@@ -43,7 +43,12 @@ from .const import (
 )
 from .coordinator import VigiControlCoordinator
 from .entity import VigiEntity
-from .go2rtc import Go2RtcTalkConfig, async_play_talkback_url, build_rtsp_stream_url
+from .go2rtc import (
+    Go2RtcTalkConfig,
+    async_play_talkback_url,
+    build_rtsp_stream_url,
+    describe_media_url,
+)
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -187,6 +192,15 @@ class VigiAssistSatellite(VigiEntity, AssistSatelliteEntity):
         self.tts_response_finished()
 
     async def _play_announcement(self, announcement: AssistSatelliteAnnouncement) -> None:
+        _LOGGER.info(
+            "VIGI Assist playing announcement: "
+            "entity=%s media=%s source=%s original=%s message_len=%s",
+            self.entity_id,
+            describe_media_url(announcement.media_id),
+            getattr(announcement, "media_id_source", None),
+            describe_media_url(announcement.original_media_id or ""),
+            len(announcement.message or ""),
+        )
         timeout = aiohttp.ClientTimeout(total=20)
         async with aiohttp.ClientSession(timeout=timeout) as session:
             await async_play_talkback_url(session, self._config, announcement.media_id)
