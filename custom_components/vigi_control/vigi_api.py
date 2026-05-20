@@ -150,6 +150,9 @@ def _nested(data: Mapping[str, Any], *path: str) -> Any:
 
 
 class VigiCameraClient:
+    _REQUEST_ATTEMPTS = 5
+    _REQUEST_RETRY_DELAY_SECONDS = 0.5
+
     def __init__(self, host: str, username: str, password: str) -> None:
         self.host = host
         self.username = username
@@ -158,6 +161,7 @@ class VigiCameraClient:
         self._lock = asyncio.Lock()
 
         self._ssl_context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
+        self._ssl_context.maximum_version = ssl.TLSVersion.TLSv1_2
         self._ssl_context.set_ciphers("AES256-GCM-SHA384")
         self._ssl_context.check_hostname = False
         self._ssl_context.verify_mode = ssl.CERT_NONE
@@ -492,13 +496,30 @@ class VigiCameraClient:
         allow_error: bool = False,
     ) -> dict[str, Any]:
         url = f"https://{self.host}{path}"
-        timeout = aiohttp.ClientTimeout(total=10)
-        try:
-            async with aiohttp.ClientSession(timeout=timeout) as session:
-                async with session.post(url, json=body, ssl=self._ssl_context) as response:
-                    data = await response.json(content_type=None)
-        except Exception as exc:
-            raise VigiApiError(f"request failed for {self.host}") from exc
+        timeout = aiohttp.ClientTimeout(
+            total=6,
+            connect=3,
+            sock_connect=3,
+            sock_read=4,
+        )
+        last_exc: Exception | None = None
+        for attempt in range(self._REQUEST_ATTEMPTS):
+            try:
+                async with aiohttp.ClientSession(timeout=timeout) as session:
+                    async with session.post(
+                        url,
+                        json=body,
+                        ssl=self._ssl_context,
+                    ) as response:
+                        data = await response.json(content_type=None)
+                break
+            except (aiohttp.ClientError, TimeoutError) as exc:
+                last_exc = exc
+                if attempt + 1 >= self._REQUEST_ATTEMPTS:
+                    raise VigiApiError(f"request failed for {self.host}") from exc
+                await asyncio.sleep(self._REQUEST_RETRY_DELAY_SECONDS)
+        else:
+            raise VigiApiError(f"request failed for {self.host}") from last_exc
 
         if not allow_error and data.get("error_code") not in (0, None):
             raise VigiApiError(f"camera returned error {data}")

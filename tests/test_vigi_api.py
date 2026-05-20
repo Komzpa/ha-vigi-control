@@ -27,6 +27,12 @@ def test_brightness_level_mapping_clamps_to_camera_scale():
     assert VigiCameraClient.brightness_level(999) == 5
 
 
+def test_client_limits_vigi_https_to_tls_1_2():
+    client = VigiCameraClient("camera.local", "user", "pass")
+
+    assert client._ssl_context.maximum_version == vigi_api.ssl.TLSVersion.TLSv1_2
+
+
 def test_device_state_reads_known_white_light_fields():
     state = VigiDeviceState(
         switch={"night_vision_mode": "wtl_night_vision", "wtl_intensity_level": "5"},
@@ -135,6 +141,46 @@ def test_request_reauthenticates_when_camera_returns_login_challenge():
 
     assert data == {"error_code": 0, "image": {"switch": {}}}
     assert calls == [("/stok=expired/ds", True), ("/stok=fresh/ds", False)]
+
+
+def test_post_retries_transient_network_failures(monkeypatch):
+    client = VigiCameraClient("camera.local", "user", "pass")
+    client._REQUEST_RETRY_DELAY_SECONDS = 0
+    calls = 0
+
+    class FakeResponse:
+        async def __aenter__(self):
+            return self
+
+        async def __aexit__(self, exc_type, exc, tb):
+            return False
+
+        async def json(self, content_type=None):
+            return {"error_code": 0, "image": {"switch": {}}}
+
+    class FakeSession:
+        def __init__(self, timeout):
+            self.timeout = timeout
+
+        async def __aenter__(self):
+            return self
+
+        async def __aexit__(self, exc_type, exc, tb):
+            return False
+
+        def post(self, url, json, ssl):
+            nonlocal calls
+            calls += 1
+            if calls == 1:
+                raise vigi_api.aiohttp.ClientConnectionError("temporary drop")
+            return FakeResponse()
+
+    monkeypatch.setattr(vigi_api.aiohttp, "ClientSession", FakeSession)
+
+    data = asyncio.run(client._post("/stok=fresh/ds", {"method": "get"}))
+
+    assert data == {"error_code": 0, "image": {"switch": {}}}
+    assert calls == 2
 
 
 def test_start_manual_alarm_uses_selected_vigi_manual_alarm_action():
