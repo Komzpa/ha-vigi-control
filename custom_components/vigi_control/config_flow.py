@@ -69,12 +69,17 @@ class VigiControlConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
     async def async_step_frigate(self, user_input=None):
         errors: dict[str, str] = {}
-        default_path = find_existing_frigate_config() or "/config/frigate/config.yml"
+        default_path = (
+            await self.hass.async_add_executor_job(find_existing_frigate_config)
+        ) or "/config/frigate/config.yml"
 
         if user_input is not None:
             path = user_input["path"]
             try:
-                candidates = load_frigate_candidates(path)
+                candidates = await self.hass.async_add_executor_job(
+                    load_frigate_candidates,
+                    path,
+                )
             except Exception:
                 errors["base"] = "cannot_read_frigate_config"
             else:
