@@ -12,6 +12,7 @@ sys.modules[SPEC.name] = frigate
 SPEC.loader.exec_module(frigate)
 
 load_frigate_candidates = frigate.load_frigate_candidates
+frigate_device_identifier = frigate.frigate_device_identifier
 
 
 def test_load_frigate_candidates_extracts_rtsp_credentials(tmp_path: Path):
@@ -39,3 +40,16 @@ cameras:
     assert candidates[0].username == "admin"
     assert candidates[0].password == "p#ss"
     assert candidates[1].host == "192.168.1.28"
+
+
+def test_frigate_device_identifier_accepts_standard_registry_identifier():
+    assert (
+        frigate_device_identifier(("frigate", "ccab4aaf_frigate:living"))
+        == "ccab4aaf_frigate:living"
+    )
+
+
+def test_frigate_device_identifier_skips_malformed_proxy_identifier():
+    assert frigate_device_identifier(("frigate", "proxy", "camera", "living", "extra")) is None
+    assert frigate_device_identifier(("frigate", "living")) is None
+    assert frigate_device_identifier(("other", "ccab4aaf_frigate:living")) is None

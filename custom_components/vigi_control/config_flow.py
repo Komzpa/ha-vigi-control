@@ -20,7 +20,11 @@ from .const import (
     DEFAULT_OPENCLAW_LISTEN_SECONDS,
     DOMAIN,
 )
-from .frigate import find_existing_frigate_config, load_frigate_candidates
+from .frigate import (
+    find_existing_frigate_config,
+    frigate_device_identifier,
+    load_frigate_candidates,
+)
 from .onvif_discovery import discover_onvif_candidates
 from .vigi_api import VigiApiError, VigiCameraClient
 
@@ -239,8 +243,9 @@ def _frigate_camera_options(hass) -> dict[str, str]:
     options = {"": "Do not link to Frigate"}
     registry = dr.async_get(hass)
     for device in registry.devices.values():
-        for domain, identifier in device.identifiers:
-            if domain == "frigate" and ":" in identifier:
+        for raw_identifier in device.identifiers:
+            identifier = frigate_device_identifier(raw_identifier)
+            if identifier is not None:
                 options[identifier] = device.name or identifier.rsplit(":", 1)[-1]
     return dict(sorted(options.items(), key=lambda item: item[1]))
 

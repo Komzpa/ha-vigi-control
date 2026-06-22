@@ -54,6 +54,18 @@ def load_frigate_candidates(path: str) -> list[FrigateCameraCandidate]:
     return candidates
 
 
+def frigate_device_identifier(raw_identifier: Any) -> str | None:
+    """Return a valid Frigate device identifier from a device-registry tuple."""
+    if not isinstance(raw_identifier, tuple) or len(raw_identifier) != 2:
+        return None
+
+    domain, identifier = raw_identifier
+    if domain != "frigate" or not isinstance(identifier, str) or ":" not in identifier:
+        return None
+
+    return identifier
+
+
 def _iter_camera_urls(camera_config: Any) -> list[str]:
     urls: list[str] = []
     if not isinstance(camera_config, dict):
