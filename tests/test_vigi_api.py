@@ -183,6 +183,43 @@ def test_post_retries_transient_network_failures(monkeypatch):
     assert calls == 2
 
 
+def test_post_wraps_malformed_json_response(monkeypatch):
+    client = VigiCameraClient("camera.local", "user", "pass")
+    client._REQUEST_ATTEMPTS = 1
+
+    class FakeResponse:
+        async def __aenter__(self):
+            return self
+
+        async def __aexit__(self, exc_type, exc, tb):
+            return False
+
+        async def json(self, content_type=None):
+            raise ValueError("malformed JSON")
+
+    class FakeSession:
+        def __init__(self, timeout):
+            self.timeout = timeout
+
+        async def __aenter__(self):
+            return self
+
+        async def __aexit__(self, exc_type, exc, tb):
+            return False
+
+        def post(self, url, json, ssl):
+            return FakeResponse()
+
+    monkeypatch.setattr(vigi_api.aiohttp, "ClientSession", FakeSession)
+
+    try:
+        asyncio.run(client._post("/stok=fresh/ds", {"method": "get"}))
+    except vigi_api.VigiApiError as exc:
+        assert isinstance(exc.__cause__, ValueError)
+    else:
+        raise AssertionError("malformed JSON should raise VigiApiError")
+
+
 def test_start_manual_alarm_uses_selected_vigi_manual_alarm_action():
     client = VigiCameraClient("camera.local", "user", "pass")
     calls: list[dict] = []

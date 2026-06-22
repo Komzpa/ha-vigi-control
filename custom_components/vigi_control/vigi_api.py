@@ -513,7 +513,7 @@ class VigiCameraClient:
                     ) as response:
                         data = await response.json(content_type=None)
                 break
-            except (aiohttp.ClientError, TimeoutError) as exc:
+            except (aiohttp.ClientError, TimeoutError, ValueError) as exc:
                 last_exc = exc
                 if attempt + 1 >= self._REQUEST_ATTEMPTS:
                     raise VigiApiError(f"request failed for {self.host}") from exc
