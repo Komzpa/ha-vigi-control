@@ -3,6 +3,7 @@ from __future__ import annotations
 import asyncio
 import base64
 import hashlib
+import logging
 import ssl
 from collections.abc import Mapping
 from dataclasses import dataclass
@@ -13,6 +14,11 @@ from urllib.parse import unquote
 import aiohttp
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric import padding
+
+_LOGGER = logging.getLogger(__name__)
+
+WHITE_LIGHT_NIGHT_VISION = "wtl_night_vision"
+INFRARED_NIGHT_VISION = "inf_night_vision"
 
 
 class VigiApiError(Exception):
@@ -159,6 +165,7 @@ class VigiCameraClient:
         self.password = password
         self._stok: str | None = None
         self._lock = asyncio.Lock()
+        self._saved_night_vision_mode: str | None = None
 
         self._ssl_context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
         self._ssl_context.maximum_version = ssl.TLSVersion.TLSv1_2
@@ -226,6 +233,7 @@ class VigiCameraClient:
 
     async def async_turn_white_light_on(self, brightness: int | None = None) -> None:
         async with self._lock:
+            await self._remember_night_vision_mode()
             bodies: list[dict[str, Any]] = []
             if brightness is not None:
                 bodies.extend(self._brightness_bodies(brightness))
@@ -235,7 +243,7 @@ class VigiCameraClient:
                         "method": "set",
                         "image": {
                             "switch": {
-                                "night_vision_mode": "wtl_night_vision",
+                                "night_vision_mode": WHITE_LIGHT_NIGHT_VISION,
                                 "types": ["night_vision_mode"],
                             }
                         },
@@ -262,7 +270,7 @@ class VigiCameraClient:
 
     async def async_turn_white_light_off(self) -> None:
         async with self._lock:
-            for body in [
+            await self._request(
                 {
                     "method": "set",
                     "image": {
@@ -272,18 +280,74 @@ class VigiCameraClient:
                             "types": ["inf_type", "wtl_type"],
                         }
                     },
-                },
-                {
-                    "method": "set",
-                    "image": {
-                        "switch": {
-                            "night_vision_mode": "inf_night_vision",
-                            "types": ["night_vision_mode"],
-                        }
-                    },
-                },
-            ]:
-                await self._request(body)
+                }
+            )
+            await self._restore_night_vision_mode()
+
+    async def _read_night_vision_modes(self) -> tuple[str | None, str | None]:
+        """Return the camera's current and previously recorded night vision modes."""
+        try:
+            data = await self.async_get_image_sections("switch")
+        except VigiApiError:
+            return None, None
+        switch = data.get("image", {}).get("switch", {})
+        if not isinstance(switch, Mapping):
+            return None, None
+        current = switch.get("night_vision_mode")
+        previous = switch.get("pre_night_vision_mode")
+        return (
+            current if isinstance(current, str) else None,
+            previous if isinstance(previous, str) else None,
+        )
+
+    async def _remember_night_vision_mode(self) -> None:
+        """Record the mode in use before the light forces white-light night vision."""
+        if self._saved_night_vision_mode is not None:
+            return
+        current, _ = await self._read_night_vision_modes()
+        if current and current != WHITE_LIGHT_NIGHT_VISION:
+            self._saved_night_vision_mode = current
+
+    async def _restore_night_vision_mode(self) -> None:
+        """Restore the previous night vision mode rather than always forcing infrared."""
+        candidates: list[str] = []
+        if self._saved_night_vision_mode:
+            candidates.append(self._saved_night_vision_mode)
+        else:
+            _, camera_previous = await self._read_night_vision_modes()
+            if camera_previous:
+                candidates.append(camera_previous)
+        if INFRARED_NIGHT_VISION not in candidates:
+            candidates.append(INFRARED_NIGHT_VISION)
+
+        for mode in candidates:
+            if mode == WHITE_LIGHT_NIGHT_VISION:
+                continue
+            try:
+                await self._request(
+                    {
+                        "method": "set",
+                        "image": {
+                            "switch": {
+                                "night_vision_mode": mode,
+                                "types": ["night_vision_mode"],
+                            }
+                        },
+                    }
+                )
+            except VigiApiError as err:
+                _LOGGER.debug(
+                    "%s: camera rejected night_vision_mode=%s (%s)", self.host, mode, err
+                )
+                continue
+            self._saved_night_vision_mode = None
+            return
+
+        _LOGGER.warning(
+            "%s: could not restore the night vision mode; the camera stays on "
+            "white-light night vision",
+            self.host,
+        )
 
     async def async_set_night_vision_mode(self, mode: str) -> None:
         async with self._lock:

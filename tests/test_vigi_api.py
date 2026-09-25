@@ -299,3 +299,97 @@ def test_test_alarm_audio_uses_vigi_ui_action():
             "usr_def_audio_alarm": {"test_audio": {"id": 1}},
         }
     ]
+
+
+def _switch_reply(current: str, previous: str | None = None) -> dict:
+    switch: dict[str, str] = {"night_vision_mode": current}
+    if previous is not None:
+        switch["pre_night_vision_mode"] = previous
+    return {"error_code": 0, "image": {"switch": switch}}
+
+
+async def _capture_with_switch(
+    client: VigiCameraClient,
+    calls: list[dict],
+    reply: dict,
+    reject: set[str] | None = None,
+) -> None:
+    rejected = reject or set()
+
+    async def fake_request(self, body):
+        calls.append(body)
+        if body.get("method") == "get":
+            return reply
+        mode = body.get("image", {}).get("switch", {}).get("night_vision_mode")
+        if mode in rejected:
+            raise vigi_api.VigiApiError("camera returned error {'error_code': -60744}")
+        return {"error_code": 0}
+
+    client._request = types.MethodType(fake_request, client)
+
+
+def _set_modes(calls: list[dict]) -> list[str]:
+    return [
+        body["image"]["switch"]["night_vision_mode"]
+        for body in calls
+        if body.get("method") == "set" and "switch" in body.get("image", {})
+    ]
+
+
+def test_turning_white_light_off_restores_the_previous_night_vision_mode():
+    client = VigiCameraClient("camera.local", "user", "pass")
+    calls: list[dict] = []
+    asyncio.run(_capture_with_switch(client, calls, _switch_reply("auto_color")))
+
+    asyncio.run(client.async_turn_white_light_on())
+    asyncio.run(client.async_turn_white_light_off())
+
+    # The mode in use before the light was switched on must come back, not a hardcoded
+    # infrared mode that silently reconfigures the camera.
+    assert _set_modes(calls) == ["wtl_night_vision", "auto_color"]
+
+
+def test_white_light_off_falls_back_to_camera_recorded_previous_mode():
+    client = VigiCameraClient("camera.local", "user", "pass")
+    calls: list[dict] = []
+    asyncio.run(
+        _capture_with_switch(
+            client, calls, _switch_reply("wtl_night_vision", previous="auto_color")
+        )
+    )
+
+    # No turn_on in this session (e.g. Home Assistant restarted while the light was on),
+    # so the client falls back to the mode the camera itself recorded.
+    asyncio.run(client.async_turn_white_light_off())
+
+    assert _set_modes(calls) == ["auto_color"]
+
+
+def test_white_light_off_falls_back_to_infrared_when_camera_rejects_previous_mode():
+    client = VigiCameraClient("camera.local", "user", "pass")
+    calls: list[dict] = []
+    asyncio.run(
+        _capture_with_switch(
+            client,
+            calls,
+            _switch_reply("auto_color"),
+            reject={"auto_color"},
+        )
+    )
+
+    asyncio.run(client.async_turn_white_light_on())
+    asyncio.run(client.async_turn_white_light_off())
+
+    assert _set_modes(calls) == ["wtl_night_vision", "auto_color", "inf_night_vision"]
+
+
+def test_white_light_off_never_leaves_the_camera_on_white_light_night_vision():
+    client = VigiCameraClient("camera.local", "user", "pass")
+    calls: list[dict] = []
+    asyncio.run(_capture_with_switch(client, calls, _switch_reply("wtl_night_vision")))
+
+    asyncio.run(client.async_turn_white_light_on())
+    asyncio.run(client.async_turn_white_light_off())
+
+    # Nothing worth restoring was recorded, so infrared remains the fallback.
+    assert _set_modes(calls) == ["wtl_night_vision", "inf_night_vision"]
