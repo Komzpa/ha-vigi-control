@@ -45,6 +45,9 @@ class VigiDeviceState:
     def has_lens_mask(self, key: str) -> bool:
         return _nested(self.lens_mask, "lens_mask_info", key) is not None
 
+    def has_microphone(self, key: str) -> bool:
+        return _nested(self.audio, "microphone", key) is not None
+
     def has_speaker(self, key: str) -> bool:
         return _nested(self.audio, "speaker", key) is not None
 
@@ -119,6 +122,14 @@ class VigiDeviceState:
         return None
 
     @property
+    def microphone_volume(self) -> int | None:
+        value = _nested(self.audio, "microphone", "volume")
+        try:
+            return int(value)
+        except (TypeError, ValueError):
+            return None
+
+    @property
     def speaker_volume(self) -> int | None:
         value = _nested(self.audio, "speaker", "volume")
         try:
@@ -187,7 +198,7 @@ class VigiCameraClient:
             "lens_mask",
         )
         audio = await self._optional_request(
-            {"method": "get", "audio_config": {"name": ["speaker"]}},
+            {"method": "get", "audio_config": {"name": ["microphone", "speaker"]}},
             "audio_config",
         )
         return VigiDeviceState(
@@ -425,6 +436,35 @@ class VigiCameraClient:
                     "audio_config": {
                         "speaker": {
                             "system_volume": str(volume),
+                        },
+                    },
+                }
+            )
+
+    async def async_set_microphone_volume(self, volume: int) -> None:
+        volume = max(0, min(100, round(volume)))
+        async with self._lock:
+            await self._request(
+                {
+                    "method": "set",
+                    "audio_config": {
+                        "microphone": {
+                            "volume": str(volume),
+                            "types": ["volume"],
+                        },
+                    },
+                }
+            )
+
+    async def async_set_microphone_value(self, key: str, value: str) -> None:
+        async with self._lock:
+            await self._request(
+                {
+                    "method": "set",
+                    "audio_config": {
+                        "microphone": {
+                            key: value,
+                            "types": [key],
                         },
                     },
                 }
