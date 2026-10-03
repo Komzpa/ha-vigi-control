@@ -77,6 +77,15 @@ COMMON_NUMBERS = [
         ),
     ),
     VigiNumberDescription(
+        key="microphone_volume",
+        translation_key="microphone_volume",
+        native_unit_of_measurement=PERCENTAGE,
+        entity_category=EntityCategory.CONFIG,
+        value_fn=lambda state: state.microphone_volume,
+        supported_fn=lambda state: state.has_microphone("volume"),
+        set_fn=lambda coordinator, value: coordinator.client.async_set_microphone_volume(value),
+    ),
+    VigiNumberDescription(
         key="speaker_volume",
         translation_key="speaker_volume",
         native_unit_of_measurement=PERCENTAGE,

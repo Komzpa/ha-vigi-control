@@ -125,6 +125,38 @@ SWITCHES = [
         ),
     ),
     VigiSwitchDescription(
+        key="microphone_echo_cancelling",
+        translation_key="microphone_echo_cancelling",
+        entity_category=EntityCategory.CONFIG,
+        value_fn=lambda state: _on_off(_nested(state.audio, "microphone", "echo_cancelling")),
+        supported_fn=lambda state: state.has_microphone("echo_cancelling"),
+        set_fn=lambda coordinator, enabled: coordinator.client.async_set_microphone_value(
+            "echo_cancelling", _enabled(enabled)
+        ),
+    ),
+    VigiSwitchDescription(
+        key="microphone_mute",
+        translation_key="microphone_mute",
+        entity_category=EntityCategory.CONFIG,
+        value_fn=lambda state: _on_off(_nested(state.audio, "microphone", "mute")),
+        supported_fn=lambda state: state.has_microphone("mute"),
+        set_fn=lambda coordinator, enabled: coordinator.client.async_set_microphone_value(
+            "mute", _enabled(enabled)
+        ),
+    ),
+    VigiSwitchDescription(
+        key="microphone_noise_cancelling",
+        translation_key="microphone_noise_cancelling",
+        entity_category=EntityCategory.CONFIG,
+        value_fn=lambda state: _on_off(
+            _nested(state.audio, "microphone", "noise_cancelling")
+        ),
+        supported_fn=lambda state: state.has_microphone("noise_cancelling"),
+        set_fn=lambda coordinator, enabled: coordinator.client.async_set_microphone_value(
+            "noise_cancelling", _enabled(enabled)
+        ),
+    ),
+    VigiSwitchDescription(
         key="lens_mask",
         translation_key="privacy_mask",
         entity_category=EntityCategory.CONFIG,

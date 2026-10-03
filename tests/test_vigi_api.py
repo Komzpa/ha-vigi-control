@@ -299,3 +299,70 @@ def test_test_alarm_audio_uses_vigi_ui_action():
             "usr_def_audio_alarm": {"test_audio": {"id": 1}},
         }
     ]
+
+
+def test_device_state_reads_microphone_fields():
+    state = VigiDeviceState(
+        switch={},
+        common={},
+        device_info={},
+        video={},
+        motion={},
+        alarm={},
+        lens_mask={},
+        audio={"microphone": {"volume": "100", "mute": "off", "noise_cancelling": "off"}},
+    )
+
+    assert state.has_microphone("volume") is True
+    assert state.has_microphone("mute") is True
+    assert state.has_microphone("noise_cancelling") is True
+    assert state.has_microphone("echo_cancelling") is False
+    assert state.microphone_volume == 100
+
+
+def test_device_state_without_microphone_reports_unsupported():
+    state = VigiDeviceState(
+        switch={},
+        common={},
+        device_info={},
+        video={},
+        motion={},
+        alarm={},
+        lens_mask={},
+        audio={"speaker": {"volume": "100"}},
+    )
+
+    assert state.has_microphone("volume") is False
+    assert state.microphone_volume is None
+
+
+def test_set_microphone_volume_clamps_and_uses_audio_config():
+    client = VigiCameraClient("camera.local", "user", "pass")
+    calls: list[dict] = []
+    asyncio.run(_capture_request(client, calls))
+
+    asyncio.run(client.async_set_microphone_volume(999))
+
+    assert calls == [
+        {
+            "method": "set",
+            "audio_config": {"microphone": {"volume": "100", "types": ["volume"]}},
+        }
+    ]
+
+
+def test_set_microphone_noise_cancelling_uses_audio_config_with_types():
+    client = VigiCameraClient("camera.local", "user", "pass")
+    calls: list[dict] = []
+    asyncio.run(_capture_request(client, calls))
+
+    asyncio.run(client.async_set_microphone_value("noise_cancelling", "off"))
+
+    assert calls == [
+        {
+            "method": "set",
+            "audio_config": {
+                "microphone": {"noise_cancelling": "off", "types": ["noise_cancelling"]}
+            },
+        }
+    ]

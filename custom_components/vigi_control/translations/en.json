@@ -127,6 +127,9 @@
       "infrared_auto_switch_delay": {
         "name": "Infrared auto-switch delay"
       },
+      "microphone_volume": {
+        "name": "Microphone volume"
+      },
       "motion_digital_sensitivity": {
         "name": "Motion digital sensitivity"
       },
@@ -251,6 +254,15 @@
       },
       "message_alarm_sound": {
         "name": "Message alarm sound"
+      },
+      "microphone_echo_cancelling": {
+        "name": "Microphone echo cancelling"
+      },
+      "microphone_mute": {
+        "name": "Microphone mute"
+      },
+      "microphone_noise_cancelling": {
+        "name": "Microphone noise cancelling"
       },
       "privacy_mask": {
         "name": "Privacy mask"
